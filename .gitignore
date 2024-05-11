@@ -1,0 +1,8 @@
+/.idea/
+__pycache__/
+.env
+/app/certs/
+/.venv/
+/postgres
+/app/db/database.db
+/app/logs/
