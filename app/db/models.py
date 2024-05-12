@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, ForeignKey, func, JSON, String
+from sqlalchemy import BigInteger, ForeignKey, func, JSON, String, SmallInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -11,11 +11,11 @@ class Users(Base):
     __tablename__ = 'users'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
-    fullname: Mapped[str]
+    fullname: Mapped[str] = mapped_column(String(30))
     email: Mapped[str] = mapped_column(unique=True)
-    role: Mapped[str] = mapped_column(default='users')
-    # photo: Mapped[str] = mapped_column()
-    age: Mapped[int]
+    role: Mapped[str] = mapped_column(SmallInteger)
+    photo: Mapped[bool] = mapped_column(default=False)
+    age: Mapped[int] = mapped_column(nullable=True)
     hashed_password: Mapped[str]
     salt: Mapped[str]
     white_list_ip: Mapped[str]
@@ -24,32 +24,32 @@ class Users(Base):
     is_enabled: Mapped[bool] = mapped_column(default=False)
     is_admin: Mapped[bool] = mapped_column(default=False)
 
-#Тут я забыл нужно ли использовать uselist или нет, поэтому будет время посмотри, но вроде как не нужно
-    seller: Mapped['Sellers'] = relationship(back_populates='user', uselist=True)
-    admin: Mapped['Admins'] = relationship(back_populates='user', uselist=True)
-    token: Mapped['Tokens'] = relationship(back_populates='user', uselist=True)
-    order: Mapped['Orders'] = relationship(back_populates='user')
-    review: Mapped['Users'] = relationship(back_populates='user')
+    seller: Mapped['Sellers'] = relationship(back_populates='user')
+    admin: Mapped['Admins'] = relationship(back_populates='user')
+    token: Mapped['Tokens'] = relationship(back_populates='user')
+    order: Mapped[list['Orders']] = relationship(back_populates='user', uselist=True)
+    review: Mapped[list['Reviews']] = relationship(back_populates='user', uselist=True)
 
 
 class Sellers(Base):
     __tablename__ = 'sellers'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
-    # Тут я бы добавил всё такие строку, удобней писать владелец или менеджер даже в админ панели чем 1, 2, также в типе
     company_role: Mapped[int] = mapped_column()
-    type_company: Mapped[int] = mapped_column()
+    type_company: Mapped[int] = mapped_column(SmallInteger)
+    # изменил связь с таблицей company, сделал наоборот, много sellers к одной компании
+    company_id: Mapped[int] = mapped_column(ForeignKey('company.id'))
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
 
     user: Mapped['Users'] = relationship(back_populates='seller')
-    company: Mapped['CompanyInfo'] = relationship(back_populates='seller')
+    company: Mapped['Companies'] = relationship(back_populates='seller')
 
 
 class Admins(Base):
     __tablename__ = 'admins'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
-    permisson: Mapped[int] = mapped_column()
+    permission: Mapped[int] = mapped_column()
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
 
     user: Mapped['Users'] = relationship(back_populates='admin')
@@ -59,6 +59,7 @@ class Tokens(Base):
     __tablename__ = 'tokens'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
+    token: Mapped[str]
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     user: Mapped['Users'] = relationship(back_populates='token')
 
@@ -69,25 +70,24 @@ class Category(Base):
 
     name: Mapped[str]
 
-    product: Mapped['Products'] = relationship(back_populates='category')
+    product: Mapped[list['Products']] = relationship(back_populates='category', uselist=True)
 
 
-class CompanyInfo(Base):
+class Companies(Base):
     __tablename__ = 'company'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
     name: Mapped[str] = mapped_column(String(60), unique=True)
-    description: Mapped[str]
-    INN: Mapped[str] = mapped_column(String(12), unique=True)
-    payment_details: Mapped[str] = ... #Не знаю что это такое
-    legal_address: Mapped[str]
-    passport_data: Mapped[str] = mapped_column(String(11), unique=True)
+    description: Mapped[str] = mapped_column(nullable=True)
+    inn: Mapped[str] = mapped_column(String(12), unique=True, nullable=True)
+    payment_details: Mapped[str] = mapped_column(nullable=True)
+    legal_address: Mapped[str] = mapped_column(nullable=True)
+    passport_data: Mapped[str] = mapped_column(String(11), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=False)
-    # photo: Mapped[str] = mapped_column()
-    seller_id: Mapped[int] = mapped_column(ForeignKey('sellers.id'))
+    photo: Mapped[bool] = mapped_column(default=False)
 
-    seller: Mapped['Sellers'] = relationship(back_populates='company')
-    product: Mapped['Products'] = relationship(back_populates='company')
+    seller: Mapped[list['Sellers']] = relationship(back_populates='company', uselist=True)
+    product: Mapped[list['Products']] = relationship(back_populates='company', uselist=True)
 
 
 class Orders(Base):
@@ -103,7 +103,7 @@ class Orders(Base):
 
     user: Mapped['Users'] = relationship(back_populates='order')
     product: Mapped['Products'] = relationship(back_populates='order')
-    review: Mapped['Orders'] = relationship(back_populates='order')
+    review: Mapped['Reviews'] = relationship(back_populates='order')
 
 
 class Products(Base):
@@ -111,18 +111,18 @@ class Products(Base):
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
     name: Mapped[str] = mapped_column(String(85), nullable=False)
-    price: Mapped[int] = mapped_column() #Положительное число!
-    quantity: Mapped[int] = mapped_column() #Положительное число!
-    rate: Mapped[int] = mapped_column() #Сами заполняем + обновляем с регулярностью
+    price: Mapped[int] = mapped_column(nullable=True)  # Положительное число!
+    quantity: Mapped[int] = mapped_column(nullable=True)  # Положительное число!
+    rate: Mapped[int] = mapped_column(nullable=True)  # Сами заполняем + обновляем с регулярностью
     company_id: Mapped[int] = mapped_column(ForeignKey('company.id'))
     category_id: Mapped[int] = mapped_column(ForeignKey('category.id'))
 
-    company: Mapped['CompanyInfo'] = relationship(back_populates='product')
+    company: Mapped['Companies'] = relationship(back_populates='product')
     category: Mapped['Category'] = relationship(back_populates='product')
-    order: Mapped['Orders'] = relationship(back_populates='product')
-    parameter: Mapped['Parameters'] = relationship(back_populates='product')
-    photo: Mapped['Products'] = relationship(back_populates='product')
-    review: Mapped['Reviews'] = relationship(back_populates='product')
+    order: Mapped[list['Orders']] = relationship(back_populates='product', uselist=True)
+    parameter: Mapped[list['Parameters']] = relationship(back_populates='product', uselist=True)
+    photo: Mapped[list['Photos']] = relationship(back_populates='product', uselist=True)
+    review: Mapped[list['Reviews']] = relationship(back_populates='product', uselist=True)
 
 
 class Parameters(Base):
@@ -140,9 +140,9 @@ class Photos(Base):
     __tablename__ = 'photos'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
-    # photo
-
+    photo: Mapped[str]
     product_id: Mapped[int] = mapped_column(ForeignKey('products.id'))
+
     product: Mapped['Products'] = relationship(back_populates='photo')
 
 
@@ -150,7 +150,7 @@ class Reviews(Base):
     __tablename__ = 'reviews'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
-    rate: Mapped[int] = mapped_column() #Сами заполняем + обновляем с регулярностью
+    rate: Mapped[int] = mapped_column()
     comment: Mapped[str]
     create_at: Mapped[datetime] = mapped_column(server_default=func.now())
     product_id: Mapped[int] = mapped_column(ForeignKey('products.id'))
@@ -160,28 +160,28 @@ class Reviews(Base):
     product: Mapped['Products'] = relationship(back_populates='review')
     user: Mapped['Users'] = relationship(back_populates='review')
     order: Mapped['Orders'] = relationship(back_populates='review')
-    photo: Mapped['PhotoReview'] = relationship(back_populates='review')
+    photo: Mapped[list['PhotoReview']] = relationship(back_populates='review', uselist=True)
 
 
 class PhotoReview(Base):
     __tablename__ = 'photo_review'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
-    # photo
+    # photo: Mapped[str]
     review_id: Mapped[int] = mapped_column(ForeignKey('reviews.id'))
 
     review: Mapped['Reviews'] = relationship(back_populates='photo')
 
 
-class Contacts(Base):
-    __tablename__ = 'contacts'
-    id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
-
-    city = ...
-    street = ...
-    house = ...
-    corpus = ...
-    literal = ...
-    apartement = ...
-
-    #TODO: add supports
+# class Contacts(Base):
+#     __tablename__ = 'contacts'
+#     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
+#
+#     city = ...
+#     street = ...
+#     house = ...
+#     corpus = ...
+#     literal = ...
+#     apartement = ...
+#
+#     #TODO: add relationship

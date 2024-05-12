@@ -6,3 +6,4 @@ __pycache__/
 /postgres
 /app/db/database.db
 /app/logs/
+app/media

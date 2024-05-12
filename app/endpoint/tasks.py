@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
 
-from app.core.security import is_refresh_token, valid_cookies, decode_jwt, is_valid_token
+from app.core.security import is_refresh_token, access_admin, decode_jwt, is_valid_token
 from app.db.CRUD import BaseCRUD
 from app.schemas.task import STask, SUserTask
 from app.schemas.user import SOkResponse
@@ -10,7 +10,7 @@ from app.schemas.user import SOkResponse
 tasks = APIRouter(
     prefix="/api/v1/tasks",
     tags=['tasks'],
-    dependencies=[Depends(valid_cookies)]
+    dependencies=[Depends(access_admin)]
 )
 
 
@@ -23,7 +23,7 @@ tasks = APIRouter(
 # websocket_clients = []
 
 
-@tasks.post('/', status_code=201, dependencies=[Depends(valid_cookies)])
+@tasks.post('/', status_code=201, dependencies=[Depends(access_admin)])
 async def create_task(param: Annotated[STask, Depends()], request: Request, websocket: WebSocket = None) -> SOkResponse:
     payload = is_refresh_token(token=request.cookies.get('access_token'))
     user_id = payload.get('sub')
@@ -36,7 +36,7 @@ async def create_task(param: Annotated[STask, Depends()], request: Request, webs
     return SOkResponse()
 
 
-@tasks.get('/', dependencies=[Depends(valid_cookies)])
+@tasks.get('/', dependencies=[Depends(access_admin)])
 async def get_user_tasks(request: Request) -> list[SUserTask]:
     payload = is_refresh_token(token=request.cookies.get('access_token'))
     user_id = payload.get('sub')
@@ -44,7 +44,7 @@ async def get_user_tasks(request: Request) -> list[SUserTask]:
     return task_list
 
 
-@tasks.delete('/delete_task', dependencies=[Depends(valid_cookies)])
+@tasks.delete('/delete_task', dependencies=[Depends(access_admin)])
 async def delete_user_task(task_id: int, request: Request) -> SOkResponse:
     payload = is_refresh_token(token=request.cookies.get('access_token'))
     user_id = payload.get('sub')
@@ -52,7 +52,7 @@ async def delete_user_task(task_id: int, request: Request) -> SOkResponse:
     return SOkResponse()
 
 
-@tasks.patch('/update_task_status', dependencies=[Depends(valid_cookies)])
+@tasks.patch('/update_task_status', dependencies=[Depends(access_admin)])
 async def update_user_task(task_id: int, status: bool, request: Request) -> SOkResponse:
     payload = is_refresh_token(token=request.cookies.get('access_token'))
     user_id = payload.get('sub')

@@ -1,8 +1,12 @@
 import random
 import re
+import shutil
+
 import jwt
 
 from datetime import datetime, timedelta
+
+from PIL import Image
 from fastapi import HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
@@ -10,6 +14,7 @@ from passlib.context import CryptContext
 from app.core.config import settings
 # from app.core.exception_handlers import CustomException
 from app.db.CRUD import BaseCRUD
+from app.schemas.seller import SSellerAdd, SSellerSignUp
 from app.schemas.user import SUserSignUp, SUserAdd, SUserInfo
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -78,28 +83,38 @@ def generate_salt() -> str:
     return salt
 
 
-async def get_hashed_psw(param: SUserSignUp, current_ip: str = None) -> SUserAdd:
+async def get_hashed_psw(param: SUserSignUp | SSellerSignUp, current_ip: str = None) -> SUserAdd | SSellerAdd:
     salt = generate_salt()
     regex = "^[a-zA-Z0-9?.,*+_()&%=$#!]+$"
     pattern = re.compile(regex)
-    if pattern.search(param.password) is None or pattern.search(param.username) is None:
+    if pattern.search(param.password) is None:
         raise HTTPException(
             status_code=403,
             detail='Unsupported letters, only english letters, numbers and special symbols'
         )
 
     hashed_password = get_password_hash(password=param.password + salt)
-    return SUserAdd(
-        username=param.username,
-        email=param.email,
-        hashed_password=hashed_password,
-        salt=salt,
-        white_list_ip=current_ip
-    )
+    if param.__class__ is SUserSignUp:
+        return SUserAdd(
+            fullname=param.fullname,
+            age=param.age,
+            email=param.email,
+            hashed_password=hashed_password,
+            salt=salt,
+            white_list_ip=current_ip
+        )
+    elif param.__class__ is SSellerSignUp:
+        return SSellerAdd(
+            fullname=param.fullname,
+            email=param.email,
+            hashed_password=hashed_password,
+            salt=salt,
+            white_list_ip=current_ip
+        )
 
 
-async def authenticate_user(username: str, password: str) -> SUserInfo | bool:
-    user = await BaseCRUD.get_user(username)
+async def authenticate_user(email: str, password: str) -> SUserInfo | bool:
+    user = await BaseCRUD.get_user(email)
     if not user:
         raise HTTPException(
             status_code=401,
@@ -136,11 +151,33 @@ def create_refresh_token(data: dict) -> str:
     )
 
 
-def valid_cookies(request: Request):
+def access_admin(request: Request):
     if request.cookies.get('access_token') is None:
         raise HTTPException(
             status_code=401,
             detail='Not authorized'
+        )
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    is_admin = payload.get('is_admin')
+    if not is_admin:
+        raise HTTPException(
+            status_code=406,
+            detail='Do not permission'
+        )
+
+
+def access_seller(request: Request):
+    if request.cookies.get('access_token') is None:
+        raise HTTPException(
+            status_code=401,
+            detail='Not authorized'
+        )
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    role: int = payload.get('role')
+    if role != 2:
+        raise HTTPException(
+            status_code=406,
+            detail='Do not permission'
         )
 
 
@@ -155,3 +192,13 @@ def is_valid_token(token: str) -> bool:
         return True
     except:
         return False
+
+
+def create_img(user_id: int, file, source: str):
+    with open(f'media/{source}/{source}{user_id}.jpg', 'wb+') as files:
+        shutil.copyfileobj(file.file, files)
+
+    with Image.open(f'media/{source}/{source}{user_id}.jpg') as photo:
+        if photo.mode in ('RGBA', 'P'):
+            photo = photo.convert('RGB')
+        photo.save(f'media/{source}/{source}{user_id}.jpg', 'JPEG', quality=20)

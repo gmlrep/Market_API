@@ -3,10 +3,13 @@ import uvicorn
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.core.exception_handlers import custom_http_exception_handler
 from app.core.redis_client import Redis
 from app.db.CRUD import BaseCRUD
+from app.endpoint.admins import admins
+from app.endpoint.sellers import sellers
 from app.endpoint.tasks import tasks
 from app.endpoint.users import users
 from app.core.config import settings
@@ -43,7 +46,8 @@ app = FastAPI(
 
 
 app.include_router(users)
-app.include_router(tasks)
+app.include_router(admins)
+app.include_router(sellers)
 app.add_exception_handler(HTTPException, custom_http_exception_handler)
 app.add_middleware(
     CORSMiddleware,
@@ -52,7 +56,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.middleware('http')(logging_middleware)
+# app.middleware('http')(logging_middleware)
+app.mount('/media', StaticFiles(directory='media'), name='media')
 
 if __name__ == '__main__':
     try:
