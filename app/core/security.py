@@ -82,7 +82,7 @@ def generate_salt() -> str:
     return salt
 
 
-async def  get_hashed_psw(param: SUserSignUp, current_ip: str = None) -> SUserAdd:
+async def get_hashed_psw(param: SUserSignUp, current_ip: str = None) -> SUserAdd:
     salt = generate_salt()
     regex = "^[a-zA-Z0-9?.,*+_()&%=$#!]+$"
     pattern = re.compile(regex)
