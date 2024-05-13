@@ -6,8 +6,8 @@ from sqlalchemy.exc import IntegrityError
 
 from app.db.database import Base
 from app.db.models import Users, Sellers, Companies, Products, Category, Parameters, Photos
-from app.schemas.admin import SCategoryAdd
-from app.schemas.customer import SCategory, SProductsInfo
+from app.schemas.admin import SCategoryAdd, SUserId
+from app.schemas.customer import SCategory, SProductsInfo, SAccountInfo
 from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts, SParameters
 from app.schemas.task import STask, SUserTask
 from app.schemas.user import SUserAdd, SUserInfo, SUserEdit
@@ -121,13 +121,17 @@ class BaseCRUD:
             await session.commit()
 
     @classmethod
-    async def get_product_category(cls, category_id: int) -> list[SProductsInfo]:
+    async def get_products_category(cls, category_id: int) -> list[SProductsInfo]:
         async with async_session() as session:
-            products = (await session.execute(select(Products).filter_by(category_id=category_id))).scalars().all()
+            # products = (await session.execute(select(Products).filter_by(category_id=category_id))).scalars().all()
+
+            products = await session.execute(
+                select(Products).filter_by(category_id=category_id).join(Photos, Products.id == Photos.product_id))
+            products = products.scalars().all()
             if products is None:
                 raise HTTPException(
                     status_code=404,
-                    detail='Pro'
+                    detail='Products not found in this category'
                 )
             products_model = [SProductsInfo.model_validate(result, from_attributes=True) for result in products]
         return products_model
@@ -144,6 +148,18 @@ class BaseCRUD:
             product_model = [SProductsInfo.model_validate(result, from_attributes=True) for result in products]
             return product_model[0]
 
+    @classmethod
+    async def get_account_info(cls, user_id: int) -> SAccountInfo:
+        async with async_session() as session:
+            user_resp = (await session.execute(select(Users).filter_by(id=user_id))).first()
+            if user_resp is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail='User not found'
+                )
+            user = [SAccountInfo.model_validate(result, from_attributes=True) for result in user_resp]
+            return user[0]
+
     # Admins
     @classmethod
     async def add_category(cls, param: SCategoryAdd):
@@ -153,3 +169,8 @@ class BaseCRUD:
             session.add(category)
             await session.commit()
 
+    @classmethod
+    async def ban_user(cls, param: SUserId):
+        async with async_session() as session:
+            await session.execute(update(Users).filter_by(id=param.user_id).values(is_enable=False))
+            await session.commit()

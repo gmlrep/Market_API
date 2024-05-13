@@ -64,7 +64,6 @@ async def logout_user(response: Response, request: Request) -> SOkResponse:
     return SOkResponse()
 
 # TODO
-# Добавить создание токена при регистрации пользователя
 # Добавление отзывов
 # Добавление фото к товарам и отзывам
 # Добавить orders

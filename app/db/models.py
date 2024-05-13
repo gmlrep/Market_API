@@ -144,6 +144,7 @@ class Photos(Base):
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
     product_id: Mapped[int] = mapped_column(ForeignKey('products.id'))
+    photo: Mapped[str]
 
     product: Mapped['Products'] = relationship(back_populates='photo')
 

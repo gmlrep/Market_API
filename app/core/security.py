@@ -12,12 +12,10 @@ from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 
 from app.core.config import settings
-# from app.core.exception_handlers import CustomException
 from app.db.CRUD import BaseCRUD
 from app.schemas.user import SUserSignUp, SUserAdd, SUserInfo
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 def get_password_hash(password: str) -> str:
