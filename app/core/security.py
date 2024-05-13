@@ -14,7 +14,6 @@ from passlib.context import CryptContext
 from app.core.config import settings
 # from app.core.exception_handlers import CustomException
 from app.db.CRUD import BaseCRUD
-from app.schemas.seller import SSellerAdd, SSellerSignUp
 from app.schemas.user import SUserSignUp, SUserAdd, SUserInfo
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -83,7 +82,7 @@ def generate_salt() -> str:
     return salt
 
 
-async def get_hashed_psw(param: SUserSignUp | SSellerSignUp, current_ip: str = None) -> SUserAdd | SSellerAdd:
+async def  get_hashed_psw(param: SUserSignUp, current_ip: str = None) -> SUserAdd:
     salt = generate_salt()
     regex = "^[a-zA-Z0-9?.,*+_()&%=$#!]+$"
     pattern = re.compile(regex)
@@ -94,23 +93,15 @@ async def get_hashed_psw(param: SUserSignUp | SSellerSignUp, current_ip: str = N
         )
 
     hashed_password = get_password_hash(password=param.password + salt)
-    if param.__class__ is SUserSignUp:
-        return SUserAdd(
-            fullname=param.fullname,
-            age=param.age,
-            email=param.email,
-            hashed_password=hashed_password,
-            salt=salt,
-            white_list_ip=current_ip
-        )
-    elif param.__class__ is SSellerSignUp:
-        return SSellerAdd(
-            fullname=param.fullname,
-            email=param.email,
-            hashed_password=hashed_password,
-            salt=salt,
-            white_list_ip=current_ip
-        )
+    return SUserAdd(
+        fullname=param.fullname,
+        role=param.role,
+        age=param.age,
+        email=param.email,
+        hashed_password=hashed_password,
+        salt=salt,
+        white_list_ip=current_ip
+    )
 
 
 async def authenticate_user(email: str, password: str) -> SUserInfo | bool:
@@ -181,6 +172,21 @@ def access_seller(request: Request):
         )
 
 
+def access_customer(request: Request):
+    if request.cookies.get('access_token') is None:
+        raise HTTPException(
+            status_code=401,
+            detail='Not authorized'
+        )
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    role: int = payload.get('role')
+    if role != 1:
+        raise HTTPException(
+            status_code=406,
+            detail='Do not permission'
+        )
+
+
 def is_valid_token(token: str) -> bool:
     try:
         payload = jwt.decode(
@@ -194,11 +200,12 @@ def is_valid_token(token: str) -> bool:
         return False
 
 
-def create_img(user_id: int, file, source: str):
-    with open(f'media/{source}/{source}{user_id}.jpg', 'wb+') as files:
-        shutil.copyfileobj(file.file, files)
+def create_img(user_id: int, files, source: str):
+    for i, file in enumerate(files):
+        with open(f'media/{source}/{source}{user_id}_{i + 1}.jpg', 'wb+') as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    with Image.open(f'media/{source}/{source}{user_id}.jpg') as photo:
-        if photo.mode in ('RGBA', 'P'):
-            photo = photo.convert('RGB')
-        photo.save(f'media/{source}/{source}{user_id}.jpg', 'JPEG', quality=20)
+        with Image.open(f'media/{source}/{source}{user_id}_{i + 1}.jpg') as photo:
+            if photo.mode in ('RGBA', 'P'):
+                photo = photo.convert('RGB')
+            photo.save(f'media/{source}/{source}{user_id}_{i + 1}.jpg', 'JPEG', quality=20)

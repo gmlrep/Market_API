@@ -37,7 +37,6 @@ class Sellers(Base):
 
     company_role: Mapped[int] = mapped_column()
     type_company: Mapped[int] = mapped_column(SmallInteger)
-    # изменил связь с таблицей company, сделал наоборот, много sellers к одной компании
     company_id: Mapped[int] = mapped_column(ForeignKey('company.id'))
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
 
@@ -61,6 +60,7 @@ class Tokens(Base):
 
     token: Mapped[str]
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+
     user: Mapped['Users'] = relationship(back_populates='token')
 
 
@@ -140,7 +140,6 @@ class Photos(Base):
     __tablename__ = 'photos'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
-    photo: Mapped[str]
     product_id: Mapped[int] = mapped_column(ForeignKey('products.id'))
 
     product: Mapped['Products'] = relationship(back_populates='photo')
@@ -167,7 +166,6 @@ class PhotoReview(Base):
     __tablename__ = 'photo_review'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
-    # photo: Mapped[str]
     review_id: Mapped[int] = mapped_column(ForeignKey('reviews.id'))
 
     review: Mapped['Reviews'] = relationship(back_populates='photo')

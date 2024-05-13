@@ -8,6 +8,7 @@ class SUser(BaseModel):
 
 
 class SUserSignUp(SUser):
+    role: int = 1
     fullname: str
     age: int
     password: constr(min_length=8, max_length=24)

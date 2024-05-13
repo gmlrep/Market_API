@@ -9,6 +9,7 @@ from app.core.exception_handlers import custom_http_exception_handler
 from app.core.redis_client import Redis
 from app.db.CRUD import BaseCRUD
 from app.endpoint.admins import admins
+from app.endpoint.customers import customers
 from app.endpoint.sellers import sellers
 from app.endpoint.tasks import tasks
 from app.endpoint.users import users
@@ -46,8 +47,9 @@ app = FastAPI(
 
 
 app.include_router(users)
-app.include_router(admins)
+app.include_router(customers)
 app.include_router(sellers)
+app.include_router(admins)
 app.add_exception_handler(HTTPException, custom_http_exception_handler)
 app.add_middleware(
     CORSMiddleware,

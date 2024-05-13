@@ -1,13 +1,14 @@
 import asyncio
 
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from sqlalchemy import select, delete, update
 from sqlalchemy.exc import IntegrityError
 
 from app.db.database import Base
-from app.db.models import Users, Sellers, Companies, Products, Category, Parameters
+from app.db.models import Users, Sellers, Companies, Products, Category, Parameters, Photos
 from app.schemas.admin import SCategoryAdd
-from app.schemas.seller import SSellerAdd, SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts
+from app.schemas.customer import SCategory, SProductsInfo
+from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts, SParameters
 from app.schemas.task import STask, SUserTask
 from app.schemas.user import SUserAdd, SUserInfo, SUserEdit
 from app.db.database import async_engine, async_session
@@ -25,8 +26,9 @@ class BaseCRUD:
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
 
+    # Auth
     @classmethod
-    async def add_user(cls, data: SUserAdd | SSellerAdd) -> int:
+    async def add_user(cls, data: SUserAdd) -> int:
         async with async_session() as session:
             user_param = data.model_dump()
             user = Users(**user_param)
@@ -52,6 +54,7 @@ class BaseCRUD:
             user = [SUserInfo.model_validate(result, from_attributes=True) for result in resp]
             return user[0]
 
+    # Sellers
     @classmethod
     async def create_company(cls, company: SCompany, seller: SSellerCom, user_id: int):
         async with async_session() as session:
@@ -79,6 +82,36 @@ class BaseCRUD:
             return company_id.scalar()
 
     @classmethod
+    async def add_product_seller(cls, param: SProducts, user_id: int, categories: str,
+                                 # details: SParameters,
+                                 photos: list[UploadFile]) -> int:
+        async with async_session() as session:
+            company_id = (await session.execute(select(Sellers.company_id).filter_by(user_id=user_id))).scalar()
+            categories_id = (await session.execute(select(Category.id).filter_by(name=categories))).scalar()
+            prodict_param = param.model_dump()
+            prodict_param.update(company_id=company_id, category_id=categories_id)
+            product = Products(**prodict_param)
+            session.add(product)
+            await session.flush()
+            await session.commit()
+            product_id = product.id
+
+            if photos is not None:
+                for photo in photos:
+                    file = Photos(product_id=product_id)
+                    session.add(file)
+                    await session.commit()
+            # details_param = details.model_dump()
+            # if details_param is not None:
+            #     param = {{'name': key, 'description': value} for key, value in details_param.items()}
+            #     for detail in param:
+            #         parameters = Parameters(**detail)
+            #         session.add(parameters)
+            #         await session.commit()
+            return product_id
+
+    # Customers
+    @classmethod
     async def edit_profile_user(cls, param: SUserEdit, user_id: int):
         async with async_session() as session:
             user_param = {key: value for key, value in param.model_dump().items() if value is not None}
@@ -88,67 +121,35 @@ class BaseCRUD:
             await session.commit()
 
     @classmethod
-    async def add_product_seller(cls, param: SProducts, user_id: int, categories: str, details: dict):
+    async def get_product_category(cls, category_id: int) -> list[SProductsInfo]:
         async with async_session() as session:
-            company_id = (await session.execute(select(Sellers.company_id).filter_by(user_id=user_id))).scalar()
-            categories_id = await session.execute(select(Category.id).filter_by(name=categories))
-            prodict_param = param.model_dump()
-            prodict_param.update(company_id=company_id, category_id=categories_id)
-            product = Products(**prodict_param)
-            await session.commit()
-            if details is not None:
-                for detail in details:
-                    parameters = Parameters(**detail)
+            products = (await session.execute(select(Products).filter_by(category_id=category_id))).scalars().all()
+            if products is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail='Pro'
+                )
+            products_model = [SProductsInfo.model_validate(result, from_attributes=True) for result in products]
+        return products_model
 
+    @classmethod
+    async def get_product_by_product_id(cls, product_id: int) -> SProductsInfo:
+        async with async_session() as session:
+            products = (await session.execute(select(Products).filter_by(id=product_id))).first()
+            if products is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail='Product not found'
+                )
+            product_model = [SProductsInfo.model_validate(result, from_attributes=True) for result in products]
+            return product_model[0]
+
+    # Admins
     @classmethod
     async def add_category(cls, param: SCategoryAdd):
         async with async_session() as session:
             category_param = param.model_dump()
             category = Category(**category_param)
+            session.add(category)
             await session.commit()
 
-
-
-
-    # @classmethod
-    # async def add_task(cls, data: STask, user_id: int, is_shared: bool = False) -> bool:
-    #     async with async_session() as session:
-    #         task_param = data.model_dump()
-    #         task = Tasks(title=data.title, user_id=user_id, is_shared=is_shared)
-    #         session.add(task)
-    #         await session.flush()
-    #         await session.commit()
-    #         return True
-    #
-    # @classmethod
-    # async def get_tasks(cls, user_id, is_shared: bool = False) -> list[SUserTask]:
-    #     async with async_session() as session:
-    #         response = await session.execute(select(Tasks).filter_by(user_id=user_id, is_shared=is_shared))
-    #         resp = response.scalars().all()
-    #         tasks = [SUserTask.model_validate(result, from_attributes=True) for result in resp]
-    #         return tasks
-    #
-    # @classmethod
-    # async def delete_user_task_by_id(cls, user_id, task_id) -> bool:
-    #     async with async_session() as session:
-    #         data = await session.execute(delete(Tasks).filter_by(user_id=user_id, id=task_id).returning(Tasks.id))
-    #         if data.scalar() is None:
-    #             raise HTTPException(
-    #                 status_code=404,
-    #                 detail='Not Found this task'
-    #             )
-    #         await session.commit()
-    #         return True
-    #
-    # @classmethod
-    # async def update_task_by_id(cls, user_id: int, status: bool, task_id: int) -> None:
-    #     async with async_session() as session:
-    #         data = await session.execute(update(Tasks).
-    #                                      where(Tasks.user_id == user_id, Tasks.id == task_id).
-    #                                      values(done=status).returning(Tasks.id))
-    #         if data.scalar() is None:
-    #             raise HTTPException(
-    #                 status_code=404,
-    #                 detail='Not Found this task'
-    #             )
-    #         await session.commit()

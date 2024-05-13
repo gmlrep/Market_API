@@ -1,22 +1,5 @@
-from enum import Enum
-
 from fastapi import UploadFile
-from pydantic import BaseModel, constr, EmailStr
-
-from app.schemas.user import SUser
-
-
-class SSellerSignUp(SUser):
-    fullname: str
-    password: constr(min_length=8, max_length=24)
-
-
-class SSellerAdd(SUser):
-    fullname: str
-    role: int = 2
-    hashed_password: str
-    salt: str
-    white_list_ip: str
+from pydantic import BaseModel
 
 
 class SCompany(BaseModel):
@@ -48,3 +31,7 @@ class SSellerId(BaseModel):
 class SProducts(BaseModel):
     name: str
     price: int | None = None
+
+
+class SParameters(BaseModel):
+    details: dict

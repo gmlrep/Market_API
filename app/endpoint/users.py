@@ -1,33 +1,28 @@
-import shutil
-from pprint import pprint
 from typing import Annotated
 
-from PIL import Image
-from redis import asyncio as redis
-from fastapi import APIRouter, Depends, HTTPException, Response, Request, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.redis_client import Redis
-from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
-    is_refresh_token, create_img
+from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt
 from app.db.CRUD import BaseCRUD
-from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse, SUserEdit
+from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse
 from app.core.config import settings
 
 users = APIRouter(
-    prefix="/api/v1/users",
-    tags=['users'],
+    prefix="/api/v1/auth",
+    tags=['Authentication and Authorization'],
 )
 
 
-@users.post('/auth/register', status_code=201)
+@users.post('/register', status_code=201)
 async def registration(param: Annotated[SUserSignUp, Depends()], request: Request) -> SOkResponse:
     user = await get_hashed_psw(param, request.client.host)
     user_id = await BaseCRUD.add_user(user)
     return SOkResponse()
 
 
-@users.post('/auth/login')
+@users.post('/login')
 async def get_token(param: Annotated[OAuth2PasswordRequestForm, Depends()],
                     response: Response, request: Request) -> STokenResponse:
     user = await authenticate_user(email=param.username, password=param.password)
@@ -67,15 +62,6 @@ async def logout_user(response: Response, request: Request) -> SOkResponse:
     response.delete_cookie('access_token')
     await Redis.delete(request.client.host)
     return SOkResponse()
-
-
-@users.post('/edit_profile')
-async def edit_profile(param: Annotated[SUserEdit, Depends()], request: Request, file: UploadFile = None):
-    payload = is_refresh_token(token=request.cookies.get('access_token'))
-    user_id = payload.get('sub')
-    await BaseCRUD.edit_profile_user(param=param, user_id=user_id)
-
-    create_img(user_id=user_id, file=file, source='users') if file is not None else ...
 
 # TODO
 # Добавить создание токена при регистрации пользователя

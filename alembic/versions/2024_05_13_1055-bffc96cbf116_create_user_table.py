@@ -1,8 +1,8 @@
 """Create user table
 
-Revision ID: ddccb7bd765e
+Revision ID: bffc96cbf116
 Revises: 
-Create Date: 2024-05-12 16:26:54.460784
+Create Date: 2024-05-13 10:55:33.624411
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'ddccb7bd765e'
+revision: str = 'bffc96cbf116'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -28,13 +28,13 @@ def upgrade() -> None:
     op.create_table('company',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=60), nullable=False),
-    sa.Column('description', sa.String(), nullable=False),
+    sa.Column('description', sa.String(), nullable=True),
     sa.Column('inn', sa.String(length=12), nullable=True),
     sa.Column('payment_details', sa.String(), nullable=True),
     sa.Column('legal_address', sa.String(), nullable=True),
     sa.Column('passport_data', sa.String(length=11), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.Column('photo', sa.String(), nullable=True),
+    sa.Column('photo', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('inn'),
     sa.UniqueConstraint('name')
@@ -44,7 +44,7 @@ def upgrade() -> None:
     sa.Column('fullname', sa.String(length=30), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('role', sa.SmallInteger(), nullable=False),
-    sa.Column('photo', sa.String(), nullable=True),
+    sa.Column('photo', sa.Boolean(), nullable=False),
     sa.Column('age', sa.Integer(), nullable=True),
     sa.Column('hashed_password', sa.String(), nullable=False),
     sa.Column('salt', sa.String(), nullable=False),
@@ -66,9 +66,9 @@ def upgrade() -> None:
     op.create_table('products',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=85), nullable=False),
-    sa.Column('price', sa.Integer(), nullable=False),
-    sa.Column('quantity', sa.Integer(), nullable=False),
-    sa.Column('rate', sa.Integer(), nullable=False),
+    sa.Column('price', sa.Integer(), nullable=True),
+    sa.Column('quantity', sa.Integer(), nullable=True),
+    sa.Column('rate', sa.Integer(), nullable=True),
     sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('category_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['category_id'], ['category.id'], ),
@@ -114,7 +114,6 @@ def upgrade() -> None:
     )
     op.create_table('photos',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('photo', sa.String(), nullable=False),
     sa.Column('product_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['product_id'], ['products.id'], ),
     sa.PrimaryKeyConstraint('id')
