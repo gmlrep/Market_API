@@ -29,6 +29,7 @@ class Users(Base):
     token: Mapped['Tokens'] = relationship(back_populates='user')
     order: Mapped[list['Orders']] = relationship(back_populates='user', uselist=True)
     review: Mapped[list['Reviews']] = relationship(back_populates='user', uselist=True)
+    contact: Mapped['Users'] = relationship(back_populates='user')
 
 
 class Sellers(Base):
@@ -100,10 +101,12 @@ class Orders(Base):
     company_id: Mapped[int]
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     product_id: Mapped[int] = mapped_column(ForeignKey('products.id'))
+    contact_id: Mapped[int] = mapped_column(ForeignKey('contacts.id'), nullable=True)
 
     user: Mapped['Users'] = relationship(back_populates='order')
     product: Mapped['Products'] = relationship(back_populates='order')
     review: Mapped['Reviews'] = relationship(back_populates='order')
+    contact: Mapped['Contacts'] = relationship(back_populates='order')
 
 
 class Products(Base):
@@ -171,15 +174,17 @@ class PhotoReview(Base):
     review: Mapped['Reviews'] = relationship(back_populates='photo')
 
 
-# class Contacts(Base):
-#     __tablename__ = 'contacts'
-#     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
-#
-#     city = ...
-#     street = ...
-#     house = ...
-#     corpus = ...
-#     literal = ...
-#     apartement = ...
-#
-#     #TODO: add relationship
+class Contacts(Base):
+    __tablename__ = 'contacts'
+    id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
+
+    city: Mapped[str]
+    street: Mapped[str]
+    house: Mapped[str]
+    building: Mapped[str]
+    literal: Mapped[str]
+    apartment: Mapped[str]
+    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+
+    user: Mapped['Users'] = relationship(back_populates='contact')
+    order: Mapped[list['Orders']] = relationship(back_populates='contact', uselist=True)
