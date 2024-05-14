@@ -33,9 +33,9 @@ async def edit_profile(param: Annotated[SUserEdit, Depends()],
     return SOkResponse()
 
 
+# Обернуть в кэш
 @customers.get('/category/{category}')
 async def get_product_by_category(param: Annotated[SCategory, Depends()]) -> list[SProductsInfo]:
-    # category_id = await Redis.get(param.category)
     products = await BaseCRUD.get_products_category(category_name=param.category)
     return products
 
@@ -46,6 +46,7 @@ async def get_product_by_id(param: Annotated[SProduct, Depends()]) -> SProductsI
     return product
 
 
+# Обернуть в кэш
 @customers.get('/category_list')
 async def get_category_list() -> list[SCategories]:
     categories = await BaseCRUD.get_categories()
