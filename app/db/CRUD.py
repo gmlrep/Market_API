@@ -9,7 +9,6 @@ from app.db.models import Users, Sellers, Companies, Products, Category, Paramet
 from app.schemas.admin import SCategoryAdd, SBanedUser, SCategoryDelete
 from app.schemas.customer import SCategory, SProductsInfo, SAccountInfo, SCategories, SBasket, SOrderId
 from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts, SParameters, SProductDelete
-from app.schemas.task import STask, SUserTask
 from app.schemas.user import SUserAdd, SUserInfo, SUserEdit
 from app.db.database import async_engine, async_session
 
@@ -77,7 +76,7 @@ class BaseCRUD:
             await session.commit()
 
     @classmethod
-    async def update_company(cls, param: SCompanyUpdate, user_id: SSellerId, file: UploadFile) -> int:
+    async def update_company(cls, param: SCompanyUpdate, user_id: int, file: UploadFile) -> int:
         async with async_session() as session:
             company_param = param.model_dump(exclude_none=True)
             # company_param = {key: value for key, value in param.model_dump().items() if value is not None}

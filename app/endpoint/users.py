@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.requests import Request
 
+from app.core.dependencies import get_user_id_by_token
 from app.core.redis_client import Redis
 from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
     is_refresh_token
@@ -68,10 +69,9 @@ async def logout_user(response: Response, request: Request) -> SOkResponse:
 
 
 @users.post('/delete_account')
-async def delete_account(request: Request):
-    payload = is_refresh_token(token=request.cookies.get('access_token'))
-    user_id = payload.get('sub')
+async def delete_account(user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
     await BaseCRUD.deactivate_account(user_id)
+    return SOkResponse()
 
 
 # TODO

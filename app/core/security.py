@@ -7,8 +7,7 @@ import jwt
 from datetime import datetime, timedelta
 
 from PIL import Image
-from fastapi import HTTPException, Request
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException
 from passlib.context import CryptContext
 
 from app.core.config import settings
@@ -138,51 +137,6 @@ def create_refresh_token(data: dict) -> str:
         token_type='refresh',
         expires_delta=expire_delta
     )
-
-
-def access_admin(request: Request):
-    if request.cookies.get('access_token') is None:
-        raise HTTPException(
-            status_code=401,
-            detail='Not authorized'
-        )
-    payload = is_refresh_token(token=request.cookies.get('access_token'))
-    is_admin = payload.get('is_admin')
-    if not is_admin:
-        raise HTTPException(
-            status_code=406,
-            detail='Do not permission'
-        )
-
-
-def access_seller(request: Request):
-    if request.cookies.get('access_token') is None:
-        raise HTTPException(
-            status_code=401,
-            detail='Not authorized'
-        )
-    payload = is_refresh_token(token=request.cookies.get('access_token'))
-    role: int = payload.get('role')
-    if role != 2:
-        raise HTTPException(
-            status_code=406,
-            detail='Do not permission'
-        )
-
-
-def access_customer(request: Request):
-    if request.cookies.get('access_token') is None:
-        raise HTTPException(
-            status_code=401,
-            detail='Not authorized'
-        )
-    payload = is_refresh_token(token=request.cookies.get('access_token'))
-    role: int = payload.get('role')
-    if role != 1:
-        raise HTTPException(
-            status_code=406,
-            detail='Do not permission'
-        )
 
 
 def is_valid_token(token: str) -> bool:

@@ -9,7 +9,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.redis_client import Redis
 from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
-    is_refresh_token, create_img, access_admin
+    is_refresh_token, create_img
+from app.core.dependencies import access_admin
 from app.db.CRUD import BaseCRUD
 from app.schemas.admin import SCategoryAdd, SBanedUser, SCategoryDelete
 from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse, SUserEdit

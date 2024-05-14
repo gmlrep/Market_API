@@ -1,34 +1,56 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.requests import Request
 
-from app.core.security import decode_jwt
-
-
-def verify_jwt(jwt_token: str) -> bool:
-    is_token_valid: bool = False
-
-    try:
-        payload = decode_jwt(jwt_token)
-    except:
-        payload = None
-    if payload:
-        is_token_valid = True
-    return is_token_valid
+from app.core.security import decode_jwt, is_refresh_token
 
 
-class JWTBearer(HTTPBearer):
-    def __init__(self, access_token=Cookie(), auto_error: bool = True):
-        super(JWTBearer, self).__init__(auto_error=auto_error)
-        self.access_token = access_token
+def access_admin(request: Request):
+    if request.cookies.get('access_token') is None:
+        raise HTTPException(
+            status_code=401,
+            detail='Not authorized'
+        )
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    is_admin = payload.get('is_admin')
+    if not is_admin:
+        raise HTTPException(
+            status_code=406,
+            detail='Do not permission'
+        )
 
-    async def __call__(self, request: Request):
-        # credentials: HTTPAuthorizationCredentials = await super(JWTBearer, self).__call__(request)
-        credentials = self.access_token
-        # if credentials:
-            # if not credentials.scheme == "Bearer":
-            #     raise HTTPException(status_code=403, detail="Invalid authentication scheme.")
-        #     if not verify_jwt(credentials.credentials):
-        #         raise HTTPException(status_code=403, detail="Invalid token or expired token.")
-        #     return credentials.credentials
-        # else:
-        #     raise HTTPException(status_code=403, detail="Invalid authorization code.")
+
+def access_seller(request: Request):
+    if request.cookies.get('access_token') is None:
+        raise HTTPException(
+            status_code=401,
+            detail='Not authorized'
+        )
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    role: int = payload.get('role')
+    if role != 2:
+        raise HTTPException(
+            status_code=406,
+            detail='Do not permission'
+        )
+
+
+def access_customer(request: Request):
+    if request.cookies.get('access_token') is None:
+        raise HTTPException(
+            status_code=401,
+            detail='Not authorized'
+        )
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    role: int = payload.get('role')
+    if role != 1:
+        raise HTTPException(
+            status_code=406,
+            detail='Do not permission'
+        )
+
+
+def get_user_id_by_token(request: Request) -> int:
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    user_id = payload.get('sub')
+    return user_id
