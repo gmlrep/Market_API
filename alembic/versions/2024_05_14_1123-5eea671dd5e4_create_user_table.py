@@ -1,8 +1,8 @@
 """Create user table
 
-Revision ID: bffc96cbf116
+Revision ID: 5eea671dd5e4
 Revises: 
-Create Date: 2024-05-13 10:55:33.624411
+Create Date: 2024-05-14 11:23:47.034648
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'bffc96cbf116'
+revision: str = '5eea671dd5e4'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,14 +27,14 @@ def upgrade() -> None:
     )
     op.create_table('company',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('name', sa.String(length=60), nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
-    sa.Column('inn', sa.String(length=12), nullable=True),
+    sa.Column('inn', sa.Integer(), nullable=True),
     sa.Column('payment_details', sa.String(), nullable=True),
     sa.Column('legal_address', sa.String(), nullable=True),
-    sa.Column('passport_data', sa.String(length=11), nullable=True),
+    sa.Column('passport_data', sa.String(), nullable=True),
+    sa.Column('photo', sa.String(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.Column('photo', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('inn'),
     sa.UniqueConstraint('name')
@@ -44,7 +44,7 @@ def upgrade() -> None:
     sa.Column('fullname', sa.String(length=30), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('role', sa.SmallInteger(), nullable=False),
-    sa.Column('photo', sa.Boolean(), nullable=False),
+    sa.Column('photo', sa.String(), nullable=True),
     sa.Column('age', sa.Integer(), nullable=True),
     sa.Column('hashed_password', sa.String(), nullable=False),
     sa.Column('salt', sa.String(), nullable=False),
@@ -52,6 +52,7 @@ def upgrade() -> None:
     sa.Column('create_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_enabled', sa.Boolean(), nullable=False),
+    sa.Column('is_baned', sa.Boolean(), nullable=False),
     sa.Column('is_admin', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
@@ -59,6 +60,18 @@ def upgrade() -> None:
     op.create_table('admins',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('permission', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('contacts',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('city', sa.String(), nullable=False),
+    sa.Column('street', sa.String(), nullable=True),
+    sa.Column('house', sa.String(), nullable=True),
+    sa.Column('building', sa.String(), nullable=True),
+    sa.Column('literal', sa.String(), nullable=True),
+    sa.Column('apartment', sa.String(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -85,21 +98,15 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('tokens',
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('token', sa.String(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
     op.create_table('orders',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('quantity', sa.Integer(), nullable=False),
     sa.Column('is_taken', sa.Boolean(), nullable=False),
     sa.Column('is_order', sa.Boolean(), nullable=False),
-    sa.Column('company_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('product_id', sa.Integer(), nullable=False),
+    sa.Column('contact_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['contact_id'], ['contacts.id'], ),
     sa.ForeignKeyConstraint(['product_id'], ['products.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -115,6 +122,7 @@ def upgrade() -> None:
     op.create_table('photos',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('product_id', sa.Integer(), nullable=False),
+    sa.Column('photo', sa.String(), nullable=False),
     sa.ForeignKeyConstraint(['product_id'], ['products.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -133,6 +141,7 @@ def upgrade() -> None:
     )
     op.create_table('photo_review',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('photo', sa.String(), nullable=False),
     sa.Column('review_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['review_id'], ['reviews.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -147,9 +156,9 @@ def downgrade() -> None:
     op.drop_table('photos')
     op.drop_table('parameters')
     op.drop_table('orders')
-    op.drop_table('tokens')
     op.drop_table('sellers')
     op.drop_table('products')
+    op.drop_table('contacts')
     op.drop_table('admins')
     op.drop_table('users')
     op.drop_table('company')

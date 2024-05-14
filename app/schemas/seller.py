@@ -1,5 +1,5 @@
 from fastapi import UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, Json
 
 
 class SCompany(BaseModel):
@@ -34,4 +34,8 @@ class SProducts(BaseModel):
 
 
 class SParameters(BaseModel):
-    details: dict
+    details: Json
+
+
+class SProductDelete(BaseModel):
+    product_id: int

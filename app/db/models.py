@@ -14,22 +14,22 @@ class Users(Base):
     fullname: Mapped[str] = mapped_column(String(30))
     email: Mapped[str] = mapped_column(unique=True)
     role: Mapped[str] = mapped_column(SmallInteger)
-    photo: Mapped[bool] = mapped_column(default=False)
+    photo: Mapped[str] = mapped_column(nullable=True)
     age: Mapped[int] = mapped_column(nullable=True)
     hashed_password: Mapped[str]
     salt: Mapped[str]
     white_list_ip: Mapped[str]
     create_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    is_active: Mapped[bool] = mapped_column(default=False)
-    is_enabled: Mapped[bool] = mapped_column(default=False)
+    is_active: Mapped[bool] = mapped_column(default=False)  # Аккаунт не удален
+    is_enabled: Mapped[bool] = mapped_column(default=False)  # Аккаунт подтвердил почту
+    is_baned: Mapped[bool] = mapped_column(default=False)  # Аккаунт заблокирован админом
     is_admin: Mapped[bool] = mapped_column(default=False)
 
     seller: Mapped['Sellers'] = relationship(back_populates='user')
     admin: Mapped['Admins'] = relationship(back_populates='user')
-    token: Mapped['Tokens'] = relationship(back_populates='user')
     order: Mapped[list['Orders']] = relationship(back_populates='user', uselist=True)
     review: Mapped[list['Reviews']] = relationship(back_populates='user', uselist=True)
-    contact: Mapped['Users'] = relationship(back_populates='user')
+    contact: Mapped['Contacts'] = relationship(back_populates='user')
 
 
 class Sellers(Base):
@@ -55,16 +55,6 @@ class Admins(Base):
     user: Mapped['Users'] = relationship(back_populates='admin')
 
 
-class Tokens(Base):
-    __tablename__ = 'tokens'
-    id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
-
-    token: Mapped[str]
-    user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
-
-    user: Mapped['Users'] = relationship(back_populates='token')
-
-
 class Category(Base):
     __tablename__ = 'category'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
@@ -78,14 +68,14 @@ class Companies(Base):
     __tablename__ = 'company'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
-    name: Mapped[str] = mapped_column(String(60), unique=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True)
     description: Mapped[str] = mapped_column(nullable=True)
-    inn: Mapped[str] = mapped_column(String(12), unique=True, nullable=True)
+    inn: Mapped[int] = mapped_column(unique=True, nullable=True)
     payment_details: Mapped[str] = mapped_column(nullable=True)
     legal_address: Mapped[str] = mapped_column(nullable=True)
-    passport_data: Mapped[str] = mapped_column(String(11), nullable=True)
+    passport_data: Mapped[str] = mapped_column(nullable=True)
+    photo: Mapped[str] = mapped_column(nullable=True)
     is_active: Mapped[bool] = mapped_column(default=False)
-    photo: Mapped[bool] = mapped_column(default=False)
 
     seller: Mapped[list['Sellers']] = relationship(back_populates='company', uselist=True)
     product: Mapped[list['Products']] = relationship(back_populates='company', uselist=True)
@@ -95,10 +85,9 @@ class Orders(Base):
     __tablename__ = 'orders'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
-    quantity: Mapped[int] #Положительное число!
-    is_taken: Mapped[bool] = mapped_column(default=False) #False означает, что товар не получен
-    is_order: Mapped[bool] = mapped_column(default=False) #False означает, что товар в корзине
-    company_id: Mapped[int]
+    quantity: Mapped[int]  # Положительное число!
+    is_taken: Mapped[bool] = mapped_column(default=False)  # False означает, что товар не получен
+    is_order: Mapped[bool] = mapped_column(default=False)  # False означает, что товар в корзине
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     product_id: Mapped[int] = mapped_column(ForeignKey('products.id'))
     contact_id: Mapped[int] = mapped_column(ForeignKey('contacts.id'), nullable=True)
@@ -170,6 +159,7 @@ class PhotoReview(Base):
     __tablename__ = 'photo_review'
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
+    photo: Mapped[str]
     review_id: Mapped[int] = mapped_column(ForeignKey('reviews.id'))
 
     review: Mapped['Reviews'] = relationship(back_populates='photo')
@@ -180,11 +170,11 @@ class Contacts(Base):
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
 
     city: Mapped[str]
-    street: Mapped[str]
-    house: Mapped[str]
-    building: Mapped[str]
-    literal: Mapped[str]
-    apartment: Mapped[str]
+    street: Mapped[str] = mapped_column(nullable=True)
+    house: Mapped[str] = mapped_column(nullable=True)
+    building: Mapped[str] = mapped_column(nullable=True)
+    literal: Mapped[str] = mapped_column(nullable=True)
+    apartment: Mapped[str] = mapped_column(nullable=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
 
     user: Mapped['Users'] = relationship(back_populates='contact')

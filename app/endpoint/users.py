@@ -1,10 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response, Request
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.requests import Request
 
 from app.core.redis_client import Redis
-from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt
+from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
+    is_refresh_token
 from app.db.CRUD import BaseCRUD
 from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse
 from app.core.config import settings
@@ -29,7 +31,8 @@ async def get_token(param: Annotated[OAuth2PasswordRequestForm, Depends()],
     # if request.client.host not in user.ip_list:
     #     send_email()
     payload = {'sub': user.id, 'role': user.role, 'username': user.email,
-               'is_active': user.is_active, 'is_enabled': user.is_enabled, 'is_admin': user.is_admin}
+               'is_active': user.is_active, 'is_enabled': user.is_enabled, 'is_admin': user.is_admin,
+               'is_baned': user.is_baned}
     access_token = create_access_token(data=payload)
     refresh_token = create_refresh_token(data=payload)
     response.set_cookie(key='access_token', value=access_token,
@@ -63,9 +66,15 @@ async def logout_user(response: Response, request: Request) -> SOkResponse:
     await Redis.delete(request.client.host)
     return SOkResponse()
 
+
+@users.post('/delete_account')
+async def delete_account(request: Request):
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    user_id = payload.get('sub')
+    await BaseCRUD.deactivate_account(user_id)
+
+
 # TODO
 # Добавление отзывов
-# Добавление фото к товарам и отзывам
-# Добавить orders
-# Бан/разбан пользователей и продавцов админами
+# Добавление фото к отзывам
 # Просмотр контактной информации о компании/продавце/пользователе админами

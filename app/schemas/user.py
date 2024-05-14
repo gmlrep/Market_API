@@ -1,6 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel, constr, EmailStr
+from pydantic import BaseModel, constr, EmailStr, PositiveInt
 
 
 class SUser(BaseModel):
@@ -10,13 +10,13 @@ class SUser(BaseModel):
 class SUserSignUp(SUser):
     role: int = 1
     fullname: str
-    age: int
+    age: PositiveInt
     password: constr(min_length=8, max_length=24)
 
 
 class SUserAdd(SUser):
     fullname: str
-    age: int
+    age: PositiveInt
     role: int = 1
     hashed_password: str
     salt: str
@@ -30,6 +30,7 @@ class SUserInfo(SUser):
     salt: str
     is_active: bool
     is_enabled: bool
+    is_baned: bool
     is_admin: bool
 
 
@@ -52,5 +53,5 @@ class SOkResponse(BaseModel):
 
 class SUserEdit(BaseModel):
     fullname: str | None = None
-    age: int | None = None
+    age: PositiveInt | None = None
 

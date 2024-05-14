@@ -40,8 +40,8 @@ async def lifespan_redis(app: FastAPI):
 app = FastAPI(
     # lifespan=lifespan,
     lifespan=lifespan_redis,
-    title="Tasker API",
-    summary="Tasker FastApi project",
+    title="Market API",
+    summary="Market FastApi project",
     version="0.1.0a",
 )
 

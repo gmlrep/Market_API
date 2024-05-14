@@ -4,14 +4,14 @@ from typing import Annotated
 
 from PIL import Image
 from redis import asyncio as redis
-from fastapi import APIRouter, Depends, HTTPException, Response, Request, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Response, File, UploadFile
 from fastapi.requests import Request
 
 from app.core.redis_client import Redis
 from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
     is_refresh_token, create_img, access_customer
 from app.db.CRUD import BaseCRUD
-from app.schemas.customer import SCategory, SProductsInfo, SProduct, SAccountInfo
+from app.schemas.customer import SCategory, SProductsInfo, SProduct, SAccountInfo, SCategories, SBasket, SOrderId
 from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse, SUserEdit
 from app.core.config import settings
 
@@ -22,11 +22,11 @@ customers = APIRouter(
 )
 
 
-@customers.post('/edit_profile')
+@customers.put('/edit_profile')
 async def edit_profile(param: Annotated[SUserEdit, Depends()], request: Request, file: UploadFile = None) -> SOkResponse:
     payload = is_refresh_token(token=request.cookies.get('access_token'))
     user_id = payload.get('sub')
-    await BaseCRUD.edit_profile_user(param=param, user_id=user_id)
+    await BaseCRUD.edit_profile_user(param=param, user_id=user_id, file=file)
 
     create_img(user_id=user_id, files=file, source='users') if file is not None else ...
     return SOkResponse()
@@ -34,8 +34,8 @@ async def edit_profile(param: Annotated[SUserEdit, Depends()], request: Request,
 
 @customers.get('/category/{category}')
 async def get_product_by_category(param: Annotated[SCategory, Depends()]) -> list[SProductsInfo]:
-    category_id = await Redis.get(param.category)
-    products = await BaseCRUD.get_products_category(category_id)
+    # category_id = await Redis.get(param.category)
+    products = await BaseCRUD.get_products_category(category_name=param.category)
     return products
 
 
@@ -45,6 +45,12 @@ async def get_product_by_id(param: Annotated[SProduct, Depends()]) -> SProductsI
     return product
 
 
+@customers.get('/category_list')
+async def get_category_list() -> list[SCategories]:
+    categories = await BaseCRUD.get_categories()
+    return categories
+
+
 @customers.get('/account')
 async def get_account_info(request: Request) -> SAccountInfo:
     payload = is_refresh_token(token=request.cookies.get('access_token'))
@@ -52,3 +58,18 @@ async def get_account_info(request: Request) -> SAccountInfo:
     user = await BaseCRUD.get_account_info(user_id=user_id)
     return user
 
+
+@customers.post('/add_or_edit_basket', status_code=201)
+async def add_basket_by_product_id(param: Annotated[SBasket, Depends()], request: Request) -> SOkResponse:
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    user_id = payload.get('sub')
+    await BaseCRUD.add_basket(param=param, user_id=user_id)
+    return SOkResponse()
+
+
+@customers.delete('/delete_basket')
+async def delete_basket_by_id(param: Annotated[SOrderId, Depends()], request: Request) -> SOkResponse:
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    user_id = payload.get('sub')
+    order_id = await BaseCRUD.delete_basket(param=param, user_id=user_id)
+    return SOkResponse()

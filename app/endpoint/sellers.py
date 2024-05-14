@@ -1,3 +1,4 @@
+import json
 import shutil
 from pprint import pprint
 from typing import Annotated, Dict
@@ -11,7 +12,7 @@ from app.core.redis_client import Redis
 from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
     create_img, is_refresh_token, access_seller
 from app.db.CRUD import BaseCRUD
-from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts, SParameters
+from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts, SParameters, SProductDelete
 from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse
 from app.core.config import settings
 
@@ -22,7 +23,7 @@ sellers = APIRouter(
 )
 
 
-@sellers.post('/add_company')
+@sellers.post('/add_company', status_code=201)
 async def create_company(seller: Annotated[SSellerCom, Depends()],
                          company: Annotated[SCompany, Depends()], request: Request) -> SOkResponse:
     payload = is_refresh_token(token=request.cookies.get('access_token'))
@@ -31,33 +32,42 @@ async def create_company(seller: Annotated[SSellerCom, Depends()],
     return SOkResponse()
 
 
-@sellers.patch('/edit_company')
+@sellers.put('/edit_company')
 async def edit_company(param: Annotated[SCompanyUpdate, Depends()],
                        request: Request,
                        file: UploadFile | None = None):
     payload = is_refresh_token(token=request.cookies.get('access_token'))
     user_id = payload.get('sub')
-    if file is not None:
-        user_id = await BaseCRUD.update_company(param=param, user_id=user_id, is_add_photo=True)
-        create_img(user_id=user_id, files=file, source='company')
-
-    else:
-        await BaseCRUD.update_company(param=param, user_id=user_id)
+    company_id = await BaseCRUD.update_company(param=param, user_id=user_id, file=file)
+    create_img(user_id=company_id, files=file, source='company') if file is not None else ...
     return SOkResponse()
 
 
-@sellers.post('add_product')
+@sellers.post('add_product', status_code=201)
 async def add_product(param: Annotated[SProducts, Depends()], request: Request,
                       categories: str,
-                      # details: Annotated[SParameters, Depends()],
-                      file: list[UploadFile] = File(...)) -> SOkResponse:
+                      file: list[UploadFile] = None) -> SOkResponse:
     payload = is_refresh_token(token=request.cookies.get('access_token'))
     user_id = payload.get('sub')
     product_id = await BaseCRUD.add_product_seller(user_id=user_id, param=param,
                                                    categories=categories,
-                                                   # details=details,
                                                    photos=file)
-    if file is not None:
+    create_img(user_id=product_id, source='product', files=file) if file is not None else ...
 
-        create_img(user_id=product_id, source='product', files=file)
+    return SOkResponse()
+
+
+@sellers.post('/add_parameters', status_code=201)
+async def add_parameters(param: dict, request: Request, product_id: int) -> SOkResponse:
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    user_id = payload.get('sub')
+    await BaseCRUD.add_parameters(param=param, user_id=user_id, product_id=product_id)
+    return SOkResponse()
+
+
+@sellers.delete('product')
+async def delete_product_by_id(param: Annotated[SProductDelete, Depends()], request: Request) -> SOkResponse:
+    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    user_id = payload.get('sub')
+    await BaseCRUD.delete_product(param=param, user_id=user_id)
     return SOkResponse()

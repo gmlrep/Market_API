@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PositiveInt
 
 
 class SCategory(BaseModel):
@@ -20,9 +20,9 @@ class SProductsInfo(BaseModel):
     name: str
     category_id: int
     company_id: int
-    # photos_id: list[int]
-    price: int | None = None
-    quantity: int | None = None
+    photos: str
+    price: PositiveInt | None = None
+    quantity: PositiveInt | None = None
     rate: int | None = None
 
 
@@ -30,17 +30,32 @@ class SAccountInfo(BaseModel):
     id: int
     email: str
     fullname: str
-    age: int
+    age: PositiveInt
+    photo: str
     create_at: datetime
 
 
-rep = {
-    'id': 1,
-    'email': 'erfg',
-    "parameters":
-        [
-            {'size': 2,
-             'height': 10
-             }
-        ]
-}
+class SOrderId(BaseModel):
+    order_id: int
+
+
+class SCategories(BaseModel):
+    id: int
+    name: str
+
+
+class SBasket(BaseModel):
+    product_id: int
+    quantity: PositiveInt
+
+
+# rep = {
+#     'id': 1,
+#     'email': 'erfg',
+#     "parameters":
+#         [
+#             {'size': 2,
+#              'height': 10
+#              }
+#         ]
+# }
