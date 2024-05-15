@@ -1,17 +1,20 @@
 import random
 import re
 import shutil
+from typing import Annotated
 
 import jwt
 
 from datetime import datetime, timedelta
 
 from PIL import Image
-from fastapi import HTTPException
+from fastapi import HTTPException, Depends
 from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.db.CRUD import BaseCRUD
+from app.schemas.customer import SPage, SPagination
+from app.schemas.seller import SManagerSignUp, SManagerAdd
 from app.schemas.user import SUserSignUp, SUserAdd, SUserInfo
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
@@ -62,12 +65,22 @@ def decode_jwt(token: str) -> dict:
     return jwt_decode
 
 
-def is_refresh_token(token: str) -> dict:
+def is_access_token(token: str) -> dict:
     payload = decode_jwt(token)
-    if payload.get('type') == 'refresh':
+    if payload.get('type') != 'access':
         raise HTTPException(
             status_code=401,
             detail="Expected 'access token' and got 'refresh token'",
+        )
+    return payload
+
+
+def is_set_password_token(token: str) -> dict:
+    payload = decode_jwt(token)
+    if payload.get('type') != 'set_password':
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect token",
         )
     return payload
 
@@ -93,6 +106,22 @@ async def get_hashed_psw(param: SUserSignUp, current_ip: str = None) -> SUserAdd
     return SUserAdd(
         fullname=param.fullname,
         role=param.role,
+        age=param.age,
+        email=param.email,
+        hashed_password=hashed_password,
+        salt=salt,
+        white_list_ip=current_ip
+    )
+
+
+async def get_manager_to_add(param: SManagerSignUp, current_ip: str = '34') -> SManagerAdd:
+    salt = generate_salt()
+    password = generate_salt()
+
+    hashed_password = get_password_hash(password=password + salt)
+    return SManagerAdd(
+        fullname=param.fullname,
+        role=2,
         age=param.age,
         email=param.email,
         hashed_password=hashed_password,
@@ -137,6 +166,13 @@ def create_refresh_token(data: dict) -> str:
         token_type='refresh',
         expires_delta=expire_delta
     )
+
+
+def pagination_param(page: Annotated[SPage, Depends()]):
+    per_page = settings.page_limit
+    start = (page.page - 1) * per_page
+    end = start + per_page
+    return SPagination(start=start, end=end)
 
 
 def is_valid_token(token: str) -> bool:

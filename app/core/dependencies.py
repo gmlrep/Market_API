@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.requests import Request
 
-from app.core.security import decode_jwt, is_refresh_token
+from app.core.security import decode_jwt, is_access_token
 
 
 def access_admin(request: Request):
@@ -11,7 +11,7 @@ def access_admin(request: Request):
             status_code=401,
             detail='Not authorized'
         )
-    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    payload = is_access_token(token=request.cookies.get('access_token'))
     is_admin = payload.get('is_admin')
     if not is_admin:
         raise HTTPException(
@@ -26,7 +26,7 @@ def access_seller(request: Request):
             status_code=401,
             detail='Not authorized'
         )
-    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    payload = is_access_token(token=request.cookies.get('access_token'))
     role: int = payload.get('role')
     if role != 2:
         raise HTTPException(
@@ -41,7 +41,7 @@ def access_customer(request: Request):
             status_code=401,
             detail='Not authorized'
         )
-    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    payload = is_access_token(token=request.cookies.get('access_token'))
     role: int = payload.get('role')
     if role != 1:
         raise HTTPException(
@@ -51,6 +51,6 @@ def access_customer(request: Request):
 
 
 def get_user_id_by_token(request: Request) -> int:
-    payload = is_refresh_token(token=request.cookies.get('access_token'))
+    payload = is_access_token(token=request.cookies.get('access_token'))
     user_id = payload.get('sub')
     return user_id

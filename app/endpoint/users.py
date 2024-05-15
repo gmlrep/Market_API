@@ -7,8 +7,9 @@ from fastapi.requests import Request
 from app.core.dependencies import get_user_id_by_token
 from app.core.redis_client import Redis
 from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
-    is_refresh_token
+    is_access_token, is_set_password_token, generate_salt, get_password_hash
 from app.db.CRUD import BaseCRUD
+from app.schemas.seller import SManagerSetPassword
 from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse
 from app.core.config import settings
 
@@ -74,12 +75,20 @@ async def delete_account(user_id: Annotated[int, Depends(get_user_id_by_token)])
     return SOkResponse()
 
 
+@users.post('/token')
+async def set_password_by_manager(param: Annotated[SManagerSetPassword, Depends()]) -> SOkResponse:
+    payload = is_set_password_token(token=param.token)
+    user_id = payload.get('sub')
+    salt = generate_salt()
+    hashed_password = get_password_hash(password=param.password + salt)
+    await BaseCRUD.set_password_by_manager(user_id=user_id, hashed_password=hashed_password, salt=salt)
+    return SOkResponse()
+
+
 # TODO
-# Добавление отзывов
-# Добавление фото к отзывам
 # Просмотр контактной информации о компании/продавце/пользователе админами
-# Вывод информации о продукте с фотографиями
 # Добавить суперадминов, которые могут назначать адинов
-# Добавить подтверждение email
+# Добавить подтверждение email и добавить отправку письма на почту в celery
 # Добавление владельцами компаний менеджеров и др. для с ограниченными правами доступа к кабинету компании
 # Вывод списка товаров с фильтрами
+

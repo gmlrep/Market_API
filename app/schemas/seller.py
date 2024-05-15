@@ -1,5 +1,7 @@
 from fastapi import UploadFile
-from pydantic import BaseModel, Json
+from pydantic import BaseModel, Json, PositiveInt
+
+from app.schemas.user import SUser
 
 
 class SCompany(BaseModel):
@@ -39,3 +41,23 @@ class SParameters(BaseModel):
 
 class SProductDelete(BaseModel):
     product_id: int
+
+
+class SManagerSignUp(SUser):
+    fullname: str
+    age: PositiveInt | None = None
+
+
+class SManagerAdd(SUser):
+    fullname: str
+    age: PositiveInt
+    role: int = 1
+    hashed_password: str
+    salt: str
+    white_list_ip: str | None = None
+    is_active: bool = False
+
+
+class SManagerSetPassword(BaseModel):
+    token: str
+    password: str

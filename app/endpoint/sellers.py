@@ -1,30 +1,23 @@
-import json
-import shutil
-from pprint import pprint
-from typing import Annotated, Dict
+from typing import Annotated
 
-from PIL import Image
-from redis import asyncio as redis
-from fastapi import APIRouter, Depends, HTTPException, Response, Request, File, UploadFile
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, UploadFile
 
-from app.core.redis_client import Redis
-from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
-    create_img, is_refresh_token
+from app.core.security import create_img, get_manager_to_add
 from app.core.dependencies import access_seller, get_user_id_by_token
 from app.db.CRUD import BaseCRUD
-from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts, SParameters, SProductDelete
-from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse
-from app.core.config import settings
+from app.processes.processes import send_verify_email
+from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SProducts, SProductDelete, \
+    SManagerSignUp
+from app.schemas.user import SOkResponse
 
 sellers = APIRouter(
     prefix="/api/v1/sellers",
-    tags=['sellers'],
+    tags=['Sellers'],
     dependencies=[Depends(access_seller)]
 )
 
 
-@sellers.post('/add_company', status_code=201)
+@sellers.post('/company', status_code=201)
 async def create_company(seller: Annotated[SSellerCom, Depends()],
                          company: Annotated[SCompany, Depends()],
                          user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
@@ -33,7 +26,7 @@ async def create_company(seller: Annotated[SSellerCom, Depends()],
     return SOkResponse()
 
 
-@sellers.put('/edit_company')
+@sellers.put('/company')
 async def edit_company(param: Annotated[SCompanyUpdate, Depends()],
                        user_id: Annotated[int, Depends(get_user_id_by_token)],
                        file: UploadFile | None = None) -> SOkResponse:
@@ -43,7 +36,7 @@ async def edit_company(param: Annotated[SCompanyUpdate, Depends()],
     return SOkResponse()
 
 
-@sellers.post('add_product', status_code=201)
+@sellers.post('/product', status_code=201)
 async def add_product(param: Annotated[SProducts, Depends()],
                       user_id: Annotated[int, Depends(get_user_id_by_token)],
                       categories: str,
@@ -56,7 +49,7 @@ async def add_product(param: Annotated[SProducts, Depends()],
     return SOkResponse()
 
 
-@sellers.post('/add_parameters', status_code=201)
+@sellers.post('/parameters', status_code=201)
 async def add_parameters(param: dict,
                          user_id: Annotated[int, Depends(get_user_id_by_token)],
                          product_id: int) -> SOkResponse:
@@ -65,8 +58,18 @@ async def add_parameters(param: dict,
     return SOkResponse()
 
 
-@sellers.delete('product')
+@sellers.delete('/product')
 async def delete_product_by_id(param: Annotated[SProductDelete, Depends()],
                                user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
     await BaseCRUD.delete_product(param=param, user_id=user_id)
+    return SOkResponse()
+
+
+@sellers.post('/manager', status_code=201)
+async def add_manager(param: Annotated[SManagerSignUp, Depends()],
+                      user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
+    manager = await get_manager_to_add(param=param)
+    manager_id = await BaseCRUD.add_user(data=manager)
+    await BaseCRUD.add_manager(user_id=user_id, manager_id=manager_id)
+    send_verify_email.delay(user_id=user_id, email=param.email)
     return SOkResponse()

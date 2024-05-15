@@ -3,12 +3,16 @@ import asyncio
 from fastapi import HTTPException, UploadFile
 from sqlalchemy import select, delete, update
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from app.db.database import Base
-from app.db.models import Users, Sellers, Companies, Products, Category, Parameters, Photos, Contacts, Orders
+from app.db.models import Users, Sellers, Companies, Products, Category, Parameters, Photos, Contacts, Orders, Reviews, \
+    PhotoReview
 from app.schemas.admin import SCategoryAdd, SBanedUser, SCategoryDelete
-from app.schemas.customer import SCategory, SProductsInfo, SAccountInfo, SCategories, SBasket, SOrderId
-from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts, SParameters, SProductDelete
+from app.schemas.customer import SCategory, SProductsInfo, SAccountInfo, SCategories, SBasket, SOrderId, SReviewAdd, \
+    SContact, SProduct, SReviewInfo
+from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts, SParameters, SProductDelete, \
+    SManagerAdd
 from app.schemas.user import SUserAdd, SUserInfo, SUserEdit
 from app.db.database import async_engine, async_session
 
@@ -27,7 +31,7 @@ class BaseCRUD:
 
     # Auth
     @classmethod
-    async def add_user(cls, data: SUserAdd) -> int:
+    async def add_user(cls, data: SUserAdd | SManagerAdd) -> int:
         async with async_session() as session:
             user_param = data.model_dump()
             user = Users(**user_param)
@@ -63,6 +67,12 @@ class BaseCRUD:
     @classmethod
     async def create_company(cls, company: SCompany, seller: SSellerCom, user_id: int):
         async with async_session() as session:
+            seller_id = (await session.execute(select(Sellers.id).filter_by(user_id=user_id))).scalar()
+            if seller_id is not None:
+                raise HTTPException(
+                    status_code=403,
+                    detail='Seller and company already exist'
+                )
             company_param = company.model_dump()
             company = Companies(**company_param)
             session.add(company)
@@ -147,6 +157,27 @@ class BaseCRUD:
                     detail='Product not found'
                 )
 
+    @classmethod
+    async def add_manager(cls, user_id: int, manager_id: int):
+        async with async_session() as session:
+            company_info = (await session.execute(select(Sellers.company_id, Sellers.type_company).filter_by(user_id=user_id))).first()
+            if company_info is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail='Company not found'
+                )
+            manager = Sellers(company_role=2, user_id=manager_id,
+                              type_company=company_info[1], company_id=company_info[0])
+            session.add(manager)
+            await session.commit()
+
+    @classmethod
+    async def set_password_by_manager(cls, hashed_password: str, user_id: int, salt: str):
+        async with async_session() as session:
+            await session.execute(update(Users).filter_by(
+                id=user_id).values(hashed_password=hashed_password, salt=salt, is_active=True, is_enabled=True))
+            await session.commit()
+
     # Customers
     @classmethod
     async def edit_profile_user(cls, param: SUserEdit, user_id: int, file: UploadFile):
@@ -167,13 +198,11 @@ class BaseCRUD:
     @classmethod
     async def get_products_category(cls, category_name: str) -> list[SProductsInfo]:
         async with async_session() as session:
-            # products = (await session.execute(select(Products).filter_by(category_id=category_id))).scalars().all()
-            category_id = (await session.execute(select(Category.id).filter_by(name=category_name))).scalar()
-            products = await session.execute(
-                select(Products).filter_by(category_id=category_id).join(Photos, Photos.product_id == Products.id))
-            products = products.scalars().all()
-            for pr in products:
-                print(pr.__dict__)
+            products = (await session.execute(select(Products).where(
+                Products.category_id == (select(Category.id).filter_by(
+                    name=category_name)).scalar_subquery()).options(
+                selectinload(Products.photo), selectinload(Products.parameter)))).scalars().all()
+
             if products is None:
                 raise HTTPException(
                     status_code=404,
@@ -185,7 +214,8 @@ class BaseCRUD:
     @classmethod
     async def get_product_by_product_id(cls, product_id: int) -> SProductsInfo:
         async with async_session() as session:
-            products = (await session.execute(select(Products).filter_by(id=product_id))).first()
+            products = (await session.execute(select(Products).filter_by(
+                id=product_id).options(selectinload(Products.photo), selectinload(Products.parameter)))).first()
             if products is None:
                 raise HTTPException(
                     status_code=404,
@@ -236,8 +266,8 @@ class BaseCRUD:
     @classmethod
     async def delete_basket(cls, param: SOrderId, user_id: int) -> int:
         async with async_session() as session:
-            order_id = await session.execute(delete(Orders).filter_by(
-                id=param.order_id, user_id=user_id, is_taken=False, is_order=False).returning(Orders.id))
+            order_id = (await session.execute(delete(Orders).filter_by(
+                id=param.order_id, user_id=user_id, is_taken=False, is_order=False).returning(Orders.id))).scalar()
             await session.commit()
             if order_id is None:
                 raise HTTPException(
@@ -245,6 +275,74 @@ class BaseCRUD:
                     detail="Order by this id doesn't exist"
                 )
             return order_id
+
+    @classmethod
+    async def add_review(cls, param: SReviewAdd, user_id: int, photos: list[UploadFile] = None) -> int:
+        async with async_session() as session:
+            order_id = (await session.execute(select(Orders.id).filter_by(
+                user_id=user_id, product_id=param.product_id, is_taken=True, is_order=True))).scalar()
+            if order_id is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail='Order not found'
+                )
+            review_id = (await session.execute(select(Reviews).filter_by(order_id=order_id))).scalar()
+            if review_id is not None:
+                raise HTTPException(
+                    status_code=403,
+                    detail='Review is already exist'
+                )
+            review_param = param.model_dump()
+            review_param.update(user_id=user_id, order_id=order_id)
+            review = Reviews(**review_param)
+            session.add(review)
+            await session.flush()
+            await session.commit()
+            review_ids = review.id
+            print(photos)
+            if photos is not None:
+                for i, photo in enumerate(photos):
+                    file = PhotoReview(review_id=review_ids, photo=f'review{review_ids}_{i + 1}.jpg')
+                    session.add(file)
+                    await session.commit()
+            return review_ids
+
+    @classmethod
+    async def add_contacts(cls, param: SContact, user_id: int):
+        async with async_session() as session:
+            contact_id = (await session.execute(select(Contacts.id).filter_by(user_id=user_id))).scalar()
+            if contact_id is not None:
+                raise HTTPException(
+                    status_code=403,
+                    detail='Contacts is already exist'
+                )
+            contact_param = param.model_dump()
+            contact_param.update(user_id=user_id)
+            contact = Contacts(**contact_param)
+            session.add(contact)
+            await session.commit()
+
+    @classmethod
+    async def edit_contacts(cls, param: SContact, user_id: int):
+        async with async_session() as session:
+            contact_id = (await session.execute(select(Contacts.id).filter_by(user_id=user_id))).scalar()
+            if contact_id is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail='Contacts does not exist'
+                )
+            contact_param = param.model_dump()
+            await session.execute(update(Contacts).filter_by(user_id=user_id).values(**contact_param))
+            await session.commit()
+
+    @classmethod
+    async def get_review_by_product_id(cls, param: SProduct) -> list[SReviewInfo]:
+        async with async_session() as session:
+            resp = (await session.execute(select(Reviews).filter_by(product_id=param.product_id).options(
+                selectinload(Reviews.photo), selectinload(Reviews.user)
+            ))).scalars().all()
+            reviews = [SReviewInfo.model_validate(result, from_attributes=True) for result in resp]
+            return reviews
 
     # Admins
     @classmethod

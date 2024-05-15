@@ -18,9 +18,9 @@ class Users(Base):
     age: Mapped[int] = mapped_column(nullable=True)
     hashed_password: Mapped[str]
     salt: Mapped[str]
-    white_list_ip: Mapped[str]
+    white_list_ip: Mapped[str] = mapped_column(nullable=True)
     create_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    is_active: Mapped[bool] = mapped_column(default=False)  # Аккаунт не удален
+    is_active: Mapped[bool] = mapped_column(default=True)  # Аккаунт не удален
     is_enabled: Mapped[bool] = mapped_column(default=False)  # Аккаунт подтвердил почту
     is_baned: Mapped[bool] = mapped_column(default=False)  # Аккаунт заблокирован админом
     is_admin: Mapped[bool] = mapped_column(default=False)

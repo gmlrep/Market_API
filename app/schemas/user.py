@@ -20,7 +20,7 @@ class SUserAdd(SUser):
     role: int = 1
     hashed_password: str
     salt: str
-    white_list_ip: str
+    white_list_ip: str | None = None
 
 
 class SUserInfo(SUser):

@@ -40,10 +40,20 @@ class AuthJWT(BaseModel):
     refresh_token_expire_days: int = int(os.getenv('REFRESH_TOKEN_EXPIRE_DAYS'))
 
 
+class MailSettings(BaseModel):
+    password: str = os.getenv('EMAIL_PASSWORD')
+    host: str = os.getenv('EMAIL_HOST')
+    username: str = os.getenv('EMAIL_USERNAME')
+    mail_from: str = os.getenv('EMAIL_FROM')
+    port: int = int(os.getenv('EMAIL_PORT'))
+
+
 class Settings(BaseSettings):
 
     fast_api_port: int = int(os.getenv('FAST_API_PORT'))
 
+    page_limit: int = 2
+    mail_settings: MailSettings = MailSettings()
     db_settings: DbSettings = DbSettings()
     auth_jwt: AuthJWT = AuthJWT()
     password_salt: PasswordSalt = PasswordSalt()

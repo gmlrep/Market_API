@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 
 from pydantic import BaseModel, PositiveInt
@@ -12,7 +13,12 @@ class SProduct(BaseModel):
 
 
 class SParameters(BaseModel):
-    parameters: list[dict]
+    name: str
+    description: str
+
+
+class SPhotos(BaseModel):
+    photo: str
 
 
 class SProductsInfo(BaseModel):
@@ -20,7 +26,8 @@ class SProductsInfo(BaseModel):
     name: str
     category_id: int
     company_id: int
-    photos: str
+    photo: list[SPhotos]
+    parameter: list[SParameters]
     price: PositiveInt | None = None
     quantity: PositiveInt | None = None
     rate: int | None = None
@@ -31,7 +38,7 @@ class SAccountInfo(BaseModel):
     email: str
     fullname: str
     age: PositiveInt
-    photo: str
+    photo: str | None
     create_at: datetime
 
 
@@ -49,13 +56,43 @@ class SBasket(BaseModel):
     quantity: PositiveInt
 
 
-# rep = {
-#     'id': 1,
-#     'email': 'erfg',
-#     "parameters":
-#         [
-#             {'size': 2,
-#              'height': 10
-#              }
-#         ]
-# }
+class SReviewAdd(BaseModel):
+    rate: int
+    comment: str
+    product_id: int
+
+
+class SContact(BaseModel):
+    city: str | None = None
+    street: str | None = None
+    house: str | None = None
+    building: str | None = None
+    literal: str | None = None
+    apartment: str | None = None
+
+
+class SPage(BaseModel):
+    page: PositiveInt
+
+
+class SPagination(BaseModel):
+    start: int
+    end: int
+
+
+class SReviewPhoto(BaseModel):
+    photo: str
+
+
+class SReviewUser(BaseModel):
+    id: int
+    fullname: str
+
+
+class SReviewInfo(BaseModel):
+    id: int
+    rate: int
+    comment: str
+    photo: list[SReviewPhoto]
+    user: SReviewUser
+    create_at: datetime
