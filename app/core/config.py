@@ -25,7 +25,7 @@ class RedisSettings(BaseModel):
 class DbSettings(BaseModel):
     # db_url: str = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
     db_url: str = f"sqlite+aiosqlite:///{BASE_DIR}/db/database.db"
-    echo: bool = True
+    echo: bool = False
 
 
 class PasswordSalt(BaseModel):

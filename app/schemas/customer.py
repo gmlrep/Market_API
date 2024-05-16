@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 
 from pydantic import BaseModel, PositiveInt
@@ -90,10 +89,6 @@ class SPagination(BaseModel):
     end: int
 
 
-class SReviewPhoto(BaseModel):
-    photo: str
-
-
 class SReviewUser(BaseModel):
     id: int
     fullname: str
@@ -103,6 +98,6 @@ class SReviewInfo(BaseModel):
     id: int
     rate: int
     comment: str
-    photo: list[SReviewPhoto]
+    photo: list[SPhotos]
     user: SReviewUser
     create_at: datetime

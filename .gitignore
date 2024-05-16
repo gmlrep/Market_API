@@ -1,6 +1,7 @@
 /.idea/
 __pycache__/
 .env
+/docker-for.env
 /app/certs/
 /.venv/
 /postgres

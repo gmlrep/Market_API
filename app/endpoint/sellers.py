@@ -6,7 +6,7 @@ from app.core.security import create_img, get_manager_to_add
 from app.core.dependencies import access_seller, get_user_id_by_token
 from app.db.CRUD import BaseCRUD
 from app.processes.processes import send_verify_email
-from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SProducts, SProductDelete, \
+from app.schemas.seller import SCompanyAdd, SSellerCom, SCompanyUpdate, SProducts, SProductDelete, \
     SManagerSignUp
 from app.schemas.user import SOkResponse
 
@@ -19,7 +19,7 @@ sellers = APIRouter(
 
 @sellers.post('/company', status_code=201)
 async def create_company(seller: Annotated[SSellerCom, Depends()],
-                         company: Annotated[SCompany, Depends()],
+                         company: Annotated[SCompanyAdd, Depends()],
                          user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
 
     await BaseCRUD.create_company(seller=seller, company=company, user_id=user_id)

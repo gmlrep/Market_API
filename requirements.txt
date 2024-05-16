@@ -18,3 +18,4 @@ alembic~=1.13.1
 pillow~=10.3.0
 celery~=5.4.0
 flower~=2.0.1
+fastapi-cache2~=0.2.1

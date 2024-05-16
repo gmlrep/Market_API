@@ -37,7 +37,7 @@ services:
     build: .
     restart: 'always'
     env_file:
-      - .env
+      - docker-for.env
     environment:
       - API_REDIS_HOST=redis
     ports:
@@ -45,15 +45,15 @@ services:
     depends_on:
       - db
       - redis
-    command: ['./start.sh']
+    command: ['./bash/start.sh']
 
   celery:
     build:
       context: .
     container_name: celery_app
     env_file:
-      - .env
-    command: ["./celery.sh", "celery"]
+      - docker-for.env
+    command: ["./bash/celery.sh", "celery"]
     depends_on:
       - redis
 
@@ -62,9 +62,9 @@ services:
       context: .
     container_name: flower_app
     env_file:
-      - .env
-    command: ["./celery.sh", "flower"]
+      - docker-for.env
+    command: ["./bash/celery.sh", "flower"]
     depends_on:
       - redis
     ports:
-      - "9999:5555"
+      - '9999:5555'

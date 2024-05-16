@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.requests import Request
 
 from app.core.dependencies import get_user_id_by_token
@@ -10,9 +9,9 @@ from app.core.security import get_hashed_psw, authenticate_user, create_access_t
     is_access_token, is_set_password_token, generate_salt, get_password_hash, verify_password, \
     get_changed_hashed_password
 from app.db.CRUD import BaseCRUD
-from app.processes.processes import send_verify_email
+from app.processes.processes import send_verify_email, send_email_new_ip
 from app.schemas.seller import SManagerSetPassword
-from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse, SPasswordChange, STokenVerify
+from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse, SPasswordChange, STokenVerify, UserLogIn
 from app.core.config import settings
 
 users = APIRouter(
@@ -30,11 +29,11 @@ async def registration(param: Annotated[SUserSignUp, Depends()], request: Reques
 
 
 @users.post('/login')
-async def get_token(param: Annotated[OAuth2PasswordRequestForm, Depends()],
+async def get_token(param: Annotated[UserLogIn, Depends()],
                     response: Response, request: Request) -> STokenResponse:
     user = await authenticate_user(email=param.username, password=param.password)
-    # if request.client.host not in user.ip_list:
-    #     send_email()
+    if request.client.host not in user.white_list_ip:
+        send_email_new_ip.delay(user_id=user.id, email=user.email, request_ip=request.client.host)
     payload = {'sub': user.id, 'role': user.role, 'username': user.email, 'is_active': user.is_active,
                'is_enabled': user.is_enabled, 'is_admin': user.is_admin, 'is_baned': user.is_baned}
     access_token = create_access_token(data=payload)
@@ -126,6 +125,5 @@ async def verify_user_email(param: Annotated[STokenVerify, Depends()]) -> SOkRes
 # TODO
 # Просмотр контактной информации о компании/продавце/пользователе админами
 # Добавить суперадминов, которые могут назначать адинов
-# Добавить подтверждение email и добавить отправку письма на почту в celery
 # Добавление владельцами компаний менеджеров и др. для с ограниченными правами доступа к кабинету компании
 # Вывод списка товаров с фильтрами

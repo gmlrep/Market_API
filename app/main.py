@@ -4,6 +4,8 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
 
 from app.core.exception_handlers import custom_http_exception_handler
 from app.core.redis_client import Redis
@@ -28,13 +30,16 @@ async def lifespan(app: FastAPI):
 
 
 @asynccontextmanager
-async def lifespan_redis(app: FastAPI):
+async def lifespan_redis(app_life: FastAPI):
     print('Проверка подключения Redis...')
     await Redis.connect()
     print('Redis запущен и успешно подключен')
+    FastAPICache.init(RedisBackend(Redis.client), prefix='fastapi-cache')
+    print('Fast-api Cache подключен')
     yield
     await Redis.close()
     print('Соединение с Redis прервано')
+
 
 app = FastAPI(
     # lifespan=lifespan,

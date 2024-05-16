@@ -3,28 +3,29 @@ from enum import Enum
 from pydantic import BaseModel, constr, EmailStr, PositiveInt
 
 
+class UserLogIn(BaseModel):
+    username: str
+    password: str
+
+
 class SUser(BaseModel):
     email: EmailStr
-
-
-class SUserSignUp(SUser):
     role: int = 1
     fullname: str
     age: PositiveInt
+
+
+class SUserSignUp(SUser):
     password: constr(min_length=8, max_length=24)
 
 
 class SUserAdd(SUser):
-    fullname: str
-    age: PositiveInt
-    role: int = 1
     hashed_password: str
     salt: str
     white_list_ip: str | None = None
 
 
 class SUserInfo(SUser):
-    role: int
     id: int
     hashed_password: str
     salt: str
@@ -32,6 +33,7 @@ class SUserInfo(SUser):
     is_enabled: bool
     is_baned: bool
     is_admin: bool
+    white_list_ip: str | None = None
 
 
 class STokenVerify(BaseModel):

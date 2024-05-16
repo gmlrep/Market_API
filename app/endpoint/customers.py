@@ -6,10 +6,10 @@ from PIL import Image
 from redis import asyncio as redis
 from fastapi import APIRouter, Depends, HTTPException, Response, File, UploadFile
 from fastapi.requests import Request
+from fastapi_cache.decorator import cache
 
 from app.core.redis_client import Redis
-from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
-    is_access_token, create_img, pagination_param
+from app.core.security import create_img, pagination_param
 from app.core.dependencies import access_customer, get_user_id_by_token
 from app.db.CRUD import BaseCRUD
 from app.schemas.customer import SCategory, SProductsInfo, SProduct, SAccountInfo, SCategories, SBasket, SOrderId, \
@@ -36,6 +36,7 @@ async def edit_profile(param: Annotated[SUserEdit, Depends()],
 
 # Обернуть в кэш
 @customers.get('/category/{category}')
+@cache(expire=60)
 async def get_product_by_category(param: Annotated[SCategory, Depends()],
                                   pagination: SPagination = Depends(pagination_param)) -> list[SProductsInfo]:
     products = await BaseCRUD.get_products_category(category_name=param.category)
@@ -51,6 +52,7 @@ async def get_product_by_id(param: Annotated[SProduct, Depends()]) -> SProductsI
 
 # Обернуть в кэш
 @customers.get('/category')
+@cache(expire=60)
 async def get_category_list() -> list[SCategories]:
     categories = await BaseCRUD.get_categories()
     return categories
@@ -105,4 +107,4 @@ async def edit_contact_info(param: Annotated[SContact, Depends()],
 async def get_review_by_product_id(param: Annotated[SProduct, Depends()],
                                    pagination: SPagination = Depends(pagination_param)) -> list[SReviewInfo]:
     reviews = await BaseCRUD.get_review_by_product_id(param=param)
-    return reviews
+    return reviews[pagination.start:pagination.end]

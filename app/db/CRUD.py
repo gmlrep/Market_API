@@ -11,7 +11,7 @@ from app.db.models import Users, Sellers, Companies, Products, Category, Paramet
 from app.schemas.admin import SCategoryAdd, SBanedUser, SCategoryDelete
 from app.schemas.customer import SCategory, SProductsInfo, SAccountInfo, SCategories, SBasket, SOrderId, SReviewAdd, \
     SContact, SProduct, SReviewInfo
-from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts, SParameters, SProductDelete, \
+from app.schemas.seller import SCompanyAdd, SSellerCom, SCompanyUpdate, SProducts, SProductDelete, \
     SManagerAdd
 from app.schemas.user import SUserAdd, SUserInfo, SUserEdit, HashedPasswordSalt
 from app.db.database import async_engine, async_session
@@ -92,7 +92,7 @@ class BaseCRUD:
 
     # Sellers
     @classmethod
-    async def create_company(cls, company: SCompany, seller: SSellerCom, user_id: int):
+    async def create_company(cls, company: SCompanyAdd, seller: SSellerCom, user_id: int):
         async with async_session() as session:
             seller_id = (await session.execute(select(Sellers.id).filter_by(user_id=user_id))).scalar()
             if seller_id is not None:
@@ -150,11 +150,6 @@ class BaseCRUD:
     @classmethod
     async def add_parameters(cls, param: dict, user_id: int, product_id: int):
         async with async_session() as session:
-            # details_param = param.model_dump()
-            # print(details_param)
-            # product_id = (await session.execute(select(Products.id).where(
-            #     Products.company_id == (select(Sellers.company_id).filter_by(user_id=user_id).scalar_subquery())
-            # ))).scalar()
             product = (await session.execute(select(Products.id).where(
                 Products.id == product_id, Products.company_id == (select(
                     Sellers.company_id).filter_by(user_id=user_id)).scalar_subquery()))).scalar()

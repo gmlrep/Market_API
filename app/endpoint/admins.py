@@ -1,19 +1,14 @@
-import shutil
-from pprint import pprint
 from typing import Annotated
 
-from PIL import Image
 from redis import asyncio as redis
-from fastapi import APIRouter, Depends, HTTPException, Response, Request, File, UploadFile
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, Response, Request, UploadFile
 
 from app.core.redis_client import Redis
-from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
-    is_access_token, create_img
+
 from app.core.dependencies import access_admin
 from app.db.CRUD import BaseCRUD
 from app.schemas.admin import SCategoryAdd, SBanedUser, SCategoryDelete
-from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse, SUserEdit
+from app.schemas.user import SOkResponse
 from app.core.config import settings
 
 admins = APIRouter(
