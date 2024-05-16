@@ -33,11 +33,30 @@ class SProductsInfo(BaseModel):
     rate: int | None = None
 
 
+class SContact(BaseModel):
+    city: str | None = None
+    street: str | None = None
+    house: str | None = None
+    building: str | None = None
+    literal: str | None = None
+    apartment: str | None = None
+
+
+class SOrderInfo(BaseModel):
+    id: int
+    product_id: int
+    quantity: int
+    is_taken: bool
+    is_order: bool
+
+
 class SAccountInfo(BaseModel):
     id: int
     email: str
     fullname: str
     age: PositiveInt
+    contact: SContact | None
+    order: list[SOrderInfo]
     photo: str | None
     create_at: datetime
 
@@ -60,15 +79,6 @@ class SReviewAdd(BaseModel):
     rate: int
     comment: str
     product_id: int
-
-
-class SContact(BaseModel):
-    city: str | None = None
-    street: str | None = None
-    house: str | None = None
-    building: str | None = None
-    literal: str | None = None
-    apartment: str | None = None
 
 
 class SPage(BaseModel):

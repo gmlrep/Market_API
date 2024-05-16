@@ -13,8 +13,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_DB_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB_USER}
       - POSTGRES_USER=${POSTGRES_DB_USER}
-    volumes:
-      - ./postgres:/var/lib/postgresql/data
+#    volumes:
+#      - ./postgres:/var/lib/postgresql/data
 
   redis:
     container_name: redis
@@ -25,8 +25,8 @@ services:
       - REDIS_PORT=${PORT_REDIS}
     ports:
       - '${PORT_REDIS}:6379'
-    volumes:
-      - '$PWD/redis.conf:/usr/local/etc/redis/redis.conf'
+#    volumes:
+#      - '$PWD/redis.conf:/usr/local/etc/redis/redis.conf'
     command:
       - 'redis-server'
     healthcheck:
@@ -34,8 +34,7 @@ services:
 
   api:
     container_name: fast_api
-    build:
-      dockerfile: Dockerfile
+    build: .
     restart: 'always'
     env_file:
       - .env
@@ -46,4 +45,26 @@ services:
     depends_on:
       - db
       - redis
-    entrypoint: ./start.sh
+    command: ['./start.sh']
+
+  celery:
+    build:
+      context: .
+    container_name: celery_app
+    env_file:
+      - .env
+    command: ["./celery.sh", "celery"]
+    depends_on:
+      - redis
+
+  flower:
+    build:
+      context: .
+    container_name: flower_app
+    env_file:
+      - .env
+    command: ["./celery.sh", "flower"]
+    depends_on:
+      - redis
+    ports:
+      - "9999:5555"

@@ -15,7 +15,7 @@ from app.core.config import settings
 from app.db.CRUD import BaseCRUD
 from app.schemas.customer import SPage, SPagination
 from app.schemas.seller import SManagerSignUp, SManagerAdd
-from app.schemas.user import SUserSignUp, SUserAdd, SUserInfo
+from app.schemas.user import SUserSignUp, SUserAdd, SUserInfo, HashedPasswordSalt
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -114,6 +114,19 @@ async def get_hashed_psw(param: SUserSignUp, current_ip: str = None) -> SUserAdd
     )
 
 
+def get_changed_hashed_password(new_password: str):
+    salt = generate_salt()
+    regex = "^[a-zA-Z0-9?.,*+_()&%=$#!]+$"
+    pattern = re.compile(regex)
+    if pattern.search(new_password) is None:
+        raise HTTPException(
+            status_code=403,
+            detail='Unsupported letters, only english letters, numbers and special symbols'
+        )
+    hashed_password = get_password_hash(password=new_password + salt)
+    return HashedPasswordSalt(hashed_password=hashed_password, salt=salt)
+
+
 async def get_manager_to_add(param: SManagerSignUp, current_ip: str = '34') -> SManagerAdd:
     salt = generate_salt()
     password = generate_salt()
@@ -140,7 +153,10 @@ async def authenticate_user(email: str, password: str) -> SUserInfo | bool:
         )
     if not verify_password(plain_password=password + user.salt + settings.password_salt.salt_static,
                            hashed_password=user.hashed_password):
-        return False
+        raise HTTPException(
+            status_code=401,
+            detail='Incorrect username or password'
+        )
     return user
 
 

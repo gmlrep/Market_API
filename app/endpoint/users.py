@@ -7,10 +7,12 @@ from fastapi.requests import Request
 from app.core.dependencies import get_user_id_by_token
 from app.core.redis_client import Redis
 from app.core.security import get_hashed_psw, authenticate_user, create_access_token, create_refresh_token, decode_jwt, \
-    is_access_token, is_set_password_token, generate_salt, get_password_hash
+    is_access_token, is_set_password_token, generate_salt, get_password_hash, verify_password, \
+    get_changed_hashed_password
 from app.db.CRUD import BaseCRUD
+from app.processes.processes import send_verify_email
 from app.schemas.seller import SManagerSetPassword
-from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse
+from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse, SPasswordChange, STokenVerify
 from app.core.config import settings
 
 users = APIRouter(
@@ -23,6 +25,7 @@ users = APIRouter(
 async def registration(param: Annotated[SUserSignUp, Depends()], request: Request) -> SOkResponse:
     user = await get_hashed_psw(param, request.client.host)
     user_id = await BaseCRUD.add_user(user)
+    send_verify_email.delay(user_id=user_id, email=param.email)
     return SOkResponse()
 
 
@@ -32,20 +35,18 @@ async def get_token(param: Annotated[OAuth2PasswordRequestForm, Depends()],
     user = await authenticate_user(email=param.username, password=param.password)
     # if request.client.host not in user.ip_list:
     #     send_email()
-    payload = {'sub': user.id, 'role': user.role, 'username': user.email,
-               'is_active': user.is_active, 'is_enabled': user.is_enabled, 'is_admin': user.is_admin,
-               'is_baned': user.is_baned}
+    payload = {'sub': user.id, 'role': user.role, 'username': user.email, 'is_active': user.is_active,
+               'is_enabled': user.is_enabled, 'is_admin': user.is_admin, 'is_baned': user.is_baned}
     access_token = create_access_token(data=payload)
     refresh_token = create_refresh_token(data=payload)
     response.set_cookie(key='access_token', value=access_token,
-                        expires=60*settings.auth_jwt.access_token_expire_minutes)
-    await Redis.set(request.client.host, refresh_token, 60*60*24*settings.auth_jwt.refresh_token_expire_days)
+                        expires=60 * settings.auth_jwt.access_token_expire_minutes)
+    await Redis.set(request.client.host, refresh_token, 60 * 60 * 24 * settings.auth_jwt.refresh_token_expire_days)
     return STokenResponse(data=SToken(access_token=access_token))
 
 
 @users.post('/refresh')
 async def auth_refresh_jwt(request: Request, response: Response) -> STokenResponse:
-
     payload = decode_jwt(token=await Redis.get(request.client.host))
     if payload.get('type') == 'access':
         raise HTTPException(
@@ -58,7 +59,7 @@ async def auth_refresh_jwt(request: Request, response: Response) -> STokenRespon
     access_token = create_access_token(data=payload)
 
     response.set_cookie(key='access_token', value=access_token)
-    await Redis.set(request.client.host, refresh_token, 60*60*24*settings.auth_jwt.refresh_token_expire_days)
+    await Redis.set(request.client.host, refresh_token, 60 * 60 * 24 * settings.auth_jwt.refresh_token_expire_days)
     return STokenResponse(data=SToken(access_token=access_token))
 
 
@@ -70,8 +71,11 @@ async def logout_user(response: Response, request: Request) -> SOkResponse:
 
 
 @users.post('/delete_account')
-async def delete_account(user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
+async def delete_account(user_id: Annotated[int, Depends(get_user_id_by_token)],
+                         request: Request, response: Response) -> SOkResponse:
     await BaseCRUD.deactivate_account(user_id)
+    await Redis.delete(request.client.host)
+    response.delete_cookie('access_token')
     return SOkResponse()
 
 
@@ -85,10 +89,43 @@ async def set_password_by_manager(param: Annotated[SManagerSetPassword, Depends(
     return SOkResponse()
 
 
+@users.post('/password')
+async def change_password(param: Annotated[SPasswordChange, Depends()],
+                          user_id: Annotated[int, Depends(get_user_id_by_token)],
+                          response: Response, request: Request) -> SOkResponse:
+
+    user = await BaseCRUD.get_user_by_token_id(user_id=user_id)
+    if not verify_password(plain_password=param.current_password + user.salt + settings.password_salt.salt_static,
+                           hashed_password=user.hashed_password):
+        raise HTTPException(
+            status_code=403,
+            detail='Current password incorrect'
+        )
+    param = get_changed_hashed_password(new_password=param.new_password)
+    await BaseCRUD.update_password(user_id=user_id, param=param)
+
+    payload = {'sub': user.id, 'role': user.role, 'username': user.email, 'is_active': user.is_active,
+               'is_enabled': user.is_enabled, 'is_admin': user.is_admin, 'is_baned': user.is_baned}
+    access_token = create_access_token(data=payload)
+    refresh_token = create_refresh_token(data=payload)
+    response.set_cookie(key='access_token', value=access_token,
+                        expires=60 * settings.auth_jwt.access_token_expire_minutes)
+    await Redis.set(request.client.host, refresh_token, 60 * 60 * 24 * settings.auth_jwt.refresh_token_expire_days)
+
+    return SOkResponse()
+
+
+@users.post('/email')
+async def verify_user_email(param: Annotated[STokenVerify, Depends()]) -> SOkResponse:
+    payload = is_set_password_token(token=param.token)
+    user_id = payload.get('sub')
+    await BaseCRUD.verify_email(user_id=user_id)
+    return SOkResponse()
+
+
 # TODO
 # Просмотр контактной информации о компании/продавце/пользователе админами
 # Добавить суперадминов, которые могут назначать адинов
 # Добавить подтверждение email и добавить отправку письма на почту в celery
 # Добавление владельцами компаний менеджеров и др. для с ограниченными правами доступа к кабинету компании
 # Вывод списка товаров с фильтрами
-

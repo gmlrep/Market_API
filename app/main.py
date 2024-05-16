@@ -13,7 +13,7 @@ from app.endpoint.customers import customers
 from app.endpoint.sellers import sellers
 from app.endpoint.users import users
 from app.core.config import settings
-from app.middleware.middleware import logging_middleware
+# from app.middleware.middleware import logging_middleware
 
 
 # Инициация тестовой базы данных

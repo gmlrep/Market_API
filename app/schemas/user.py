@@ -34,9 +34,23 @@ class SUserInfo(SUser):
     is_admin: bool
 
 
+class STokenVerify(BaseModel):
+    token: str
+
+
+class HashedPasswordSalt(BaseModel):
+    hashed_password: str
+    salt: str
+
+
 class SToken(BaseModel):
     access_token: str
     token_type: str = 'bearer'
+
+
+class SPasswordChange(BaseModel):
+    current_password: str
+    new_password: str
 
 
 class STokenResponse(BaseModel):

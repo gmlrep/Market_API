@@ -15,5 +15,5 @@ COPY app /app/app
 COPY alembic /app/alembic
 COPY ./alembic.ini /app/alembic.ini
 COPY ./start.sh /app/start.sh
-RUN chmod u+x ./start.sh
-ENTRYPOINT ["./start.sh"]
+COPY ./celery.sh /app/celery.sh
+RUN chmod a+x ./*.sh

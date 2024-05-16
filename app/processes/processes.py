@@ -1,7 +1,7 @@
 import smtplib
 
 from app.core.config import settings
-from app.processes.cellery import celery
+from app.processes.celery import celery
 from app.processes.email_templates import get_email_template
 
 

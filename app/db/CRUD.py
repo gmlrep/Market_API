@@ -13,7 +13,7 @@ from app.schemas.customer import SCategory, SProductsInfo, SAccountInfo, SCatego
     SContact, SProduct, SReviewInfo
 from app.schemas.seller import SCompany, SSellerCom, SCompanyUpdate, SSellerId, SProducts, SParameters, SProductDelete, \
     SManagerAdd
-from app.schemas.user import SUserAdd, SUserInfo, SUserEdit
+from app.schemas.user import SUserAdd, SUserInfo, SUserEdit, HashedPasswordSalt
 from app.db.database import async_engine, async_session
 
 
@@ -56,6 +56,33 @@ class BaseCRUD:
                 return False
             user = [SUserInfo.model_validate(result, from_attributes=True) for result in resp]
             return user[0]
+
+    @classmethod
+    async def get_user_by_token_id(cls, user_id: int) -> SUserInfo:
+        async with async_session() as session:
+            resp = (await session.execute(select(Users).filter_by(id=user_id))).first()
+            user = [SUserInfo.model_validate(result, from_attributes=True) for result in resp]
+            return user[0]
+
+    @classmethod
+    async def update_password(cls, param: HashedPasswordSalt, user_id: int):
+        async with async_session() as session:
+            resp = await session.execute(update(Users).filter_by(id=user_id).values(
+                hashed_password=param.hashed_password, salt=param.salt))
+            await session.commit()
+
+    @classmethod
+    async def verify_email(cls, user_id: int):
+        async with async_session() as session:
+            user_id = (await session.execute(update(Users).filter_by(
+                id=user_id).values(is_enabled=True).returning(Users.id))).scalar()
+            print(user_id)
+            if not user_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail='User does not exist'
+                )
+            await session.commit()
 
     @classmethod
     async def deactivate_account(cls, user_id: int):
@@ -227,7 +254,9 @@ class BaseCRUD:
     @classmethod
     async def get_account_info(cls, user_id: int) -> SAccountInfo:
         async with async_session() as session:
-            user_resp = (await session.execute(select(Users).filter_by(id=user_id))).first()
+            user_resp = (await session.execute(select(Users).filter_by(id=user_id).options(
+                selectinload(Users.order), selectinload(Users.contact)
+            ))).first()
             if user_resp is None:
                 raise HTTPException(
                     status_code=404,
