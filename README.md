@@ -2,6 +2,7 @@
 
 <img src="https://img.shields.io/badge/Python-3.9 | 3.10 | 3.11 | 3.12-blue">
 <br>
+<div>
 <img src="https://img.shields.io/badge/FAST API-blue">
 <img src="https://img.shields.io/badge/Celery-blue">
 <img src="https://img.shields.io/badge/Flower-blue">
@@ -15,7 +16,7 @@
 <img src="https://img.shields.io/badge/Docker-blue">
 <img src="https://img.shields.io/badge/Systemd-blue">
 <img src="https://img.shields.io/badge/Uvicorn-blue">
-
+</div>
 ## Установка
 
 ### Системные требования:
