@@ -1,5 +1,21 @@
 # Market with FastAPI
 
+<img src="https://img.shields.io/badge/Python-3.9 | 3.10 | 3.11 | 3.12-blue">
+<br>
+<img src="https://img.shields.io/badge/FAST API-blue">
+<img src="https://img.shields.io/badge/Celery-blue">
+<img src="https://img.shields.io/badge/Flower-blue">
+<img src="https://img.shields.io/badge/SQAlchemy-blue">
+<img src="https://img.shields.io/badge/Pydentic-blue">
+<img src="https://img.shields.io/badge/Redis-blue">
+<img src="https://img.shields.io/badge/FastApi Cache-blue">
+<img src="https://img.shields.io/badge/Alembic-blue">
+<img src="https://img.shields.io/badge/JWT-blue">
+<img src="https://img.shields.io/badge/PostgreSQL-blue">
+<img src="https://img.shields.io/badge/Docker-blue">
+<img src="https://img.shields.io/badge/Systemd-blue">
+<img src="https://img.shields.io/badge/Uvicorn-blue">
+
 ## Установка
 
 ### Системные требования:
@@ -29,3 +45,4 @@
 1. Возьмите файл `env_example` там же, переименуйте как `.env` (с точкой в начале), откройте и заполните переменные;
 2. Запустите бота: `docker compose up -d`;
 3. Проверьте, что контейнер поднялся: `docker compose ps`
+
