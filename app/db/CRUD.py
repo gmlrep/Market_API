@@ -6,7 +6,6 @@ from sqlalchemy.orm import selectinload
 from app.db.database import Base
 from app.db.models import Users, Sellers, Companies, Products, Category, Parameters, Photos, Contacts, Orders, Reviews, \
     PhotoReview
-from app.schemas.admin import SCategoryAdd, SBanedUser, SCategoryDelete
 from app.schemas.customer import SCategory, SProductsInfo, SAccountInfo, SCategories, SBasket, SOrderId, SReviewAdd, \
     SContact, SProduct, SReviewInfo
 from app.schemas.seller import SCompanyAdd, SSellerCom, SCompanyUpdate, SProducts, SProductDelete, \
@@ -365,33 +364,3 @@ class BaseCRUD:
             ))).scalars().all()
             reviews = [SReviewInfo.model_validate(result, from_attributes=True) for result in resp]
             return reviews
-
-    # Admins
-    @classmethod
-    async def add_category(cls, param: SCategoryAdd):
-        async with async_session() as session:
-            category_param = param.model_dump()
-            category = Category(**category_param)
-            session.add(category)
-            await session.commit()
-
-    @classmethod
-    async def ban_unban_user(cls, param: SBanedUser):
-        async with async_session() as session:
-            await session.execute(update(Users).filter_by(id=param.user_id).values(is_baned=param.is_baned))
-            await session.commit()
-
-    @classmethod
-    async def delete_category_by_name_or_id(cls, param: SCategoryDelete):
-        async with async_session() as session:
-            if param.name is None and param.id is None:
-                raise HTTPException(
-                    status_code=403,
-                    detail='Do not have parameters'
-                )
-            if param.id is not None:
-                await session.execute(delete(Category).filter_by(id=param.id))
-                await session.commit()
-            elif param.name is not None:
-                await session.execute(delete(Category).filter_by(name=param.name))
-                await session.commit()
