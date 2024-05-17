@@ -45,7 +45,7 @@ services:
     depends_on:
       - db
       - redis
-    command: ['./bash/start.sh']
+    command: ['./bash/app.sh']
 
   celery:
     build:

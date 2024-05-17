@@ -1,5 +1,3 @@
-import asyncio
-
 from fastapi import HTTPException, UploadFile
 from sqlalchemy import select, delete, update
 from sqlalchemy.exc import IntegrityError
@@ -67,7 +65,7 @@ class BaseCRUD:
     @classmethod
     async def update_password(cls, param: HashedPasswordSalt, user_id: int):
         async with async_session() as session:
-            resp = await session.execute(update(Users).filter_by(id=user_id).values(
+            await session.execute(update(Users).filter_by(id=user_id).values(
                 hashed_password=param.hashed_password, salt=param.salt))
             await session.commit()
 

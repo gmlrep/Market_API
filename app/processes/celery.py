@@ -6,4 +6,3 @@ celery = Celery('task',
                 include=['app.processes.processes'],
                 broker_connection_retry_on_startup=True
                 )
-

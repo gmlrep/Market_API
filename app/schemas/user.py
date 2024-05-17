@@ -1,5 +1,3 @@
-from enum import Enum
-
 from pydantic import BaseModel, constr, EmailStr, PositiveInt
 
 
@@ -70,4 +68,3 @@ class SOkResponse(BaseModel):
 class SUserEdit(BaseModel):
     fullname: str | None = None
     age: PositiveInt | None = None
-

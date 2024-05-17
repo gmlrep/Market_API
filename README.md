@@ -1,8 +1,8 @@
 # Market with FastAPI
 
 <img src="https://img.shields.io/badge/Python-3.9 | 3.10 | 3.11 | 3.12-blue">
-<br>
-<div>
+
+<div> 
 <img src="https://img.shields.io/badge/FAST API-blue">
 <img src="https://img.shields.io/badge/Celery-blue">
 <img src="https://img.shields.io/badge/Flower-blue">

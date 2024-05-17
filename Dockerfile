@@ -12,7 +12,6 @@ COPY --from=compile /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /app
 COPY app /app/app
-COPY alembic /app/alembic
 COPY ./alembic.ini /app/alembic.ini
 COPY ./bash /app/bash
 RUN chmod a+x ./bash/*.sh

@@ -10,8 +10,10 @@ from datetime import datetime, timedelta
 from PIL import Image
 from fastapi import HTTPException, Depends
 from passlib.context import CryptContext
+from fastapi import Request
 
 from app.core.config import settings
+from app.core.redis_client import Redis
 from app.db.CRUD import BaseCRUD
 from app.schemas.customer import SPage, SPagination
 from app.schemas.seller import SManagerSignUp, SManagerAdd
@@ -213,3 +215,34 @@ def create_img(user_id: int, files, source: str):
             if photo.mode in ('RGBA', 'P'):
                 photo = photo.convert('RGB')
             photo.save(f'media/{source}/{source}{user_id}_{i + 1}.jpg', 'JPEG', quality=20)
+
+
+async def is_access_token_admin(token: str, request: Request) -> dict:
+    try:
+        payload = jwt.decode(
+            token,
+            key=settings.auth_jwt.public_key_path.read_text(),
+            algorithms=settings.auth_jwt.algorithm)
+    except (jwt.exceptions.InvalidSignatureError, jwt.exceptions.DecodeError):
+        raise HTTPException(
+            status_code=403,
+            detail='Incorrect token'
+        )
+    except jwt.exceptions.ExpiredSignatureError:
+        payload = decode_jwt(token=await Redis.get(request.client.host))
+        if payload.get('type') != 'refresh':
+            raise HTTPException(
+                status_code=403,
+                detail='Incorrect refresh token'
+            )
+        refresh_token = create_refresh_token(data=payload)
+        payload.update({'type': 'access'})
+        access_token = create_access_token(data=payload)
+        request.session.update({'access_token': access_token, 'token_type': 'Bearer'})
+        await Redis.set(request.client.host, refresh_token, 60 * 60 * 24 * settings.auth_jwt.refresh_token_expire_days)
+    if payload.get('type') != 'access':
+        raise HTTPException(
+            status_code=401,
+            detail="Expected 'access token' and got 'refresh token'",
+        )
+    return payload

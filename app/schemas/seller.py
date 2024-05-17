@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Json, PositiveInt, EmailStr
+from pydantic import BaseModel, PositiveInt, EmailStr
 
 from app.schemas.user import SUser
 

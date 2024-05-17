@@ -1,8 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException, Request, Cookie
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import HTTPException
 from fastapi.requests import Request
 
-from app.core.security import decode_jwt, is_access_token
+from app.core.security import is_access_token
 
 
 def access_admin(request: Request):
