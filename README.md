@@ -42,10 +42,12 @@ Market API, написанный на Fast API, который позволяе�
 ## Установка
 
 ### Системные требования:
+<div>
 <img src="https://img.shields.io/badge/Python-3.9+-blue">
 <img src="https://img.shields.io/badge/Linux/Windows-blue">
 <img src="https://img.shields.io/badge/Redis-blue">
 <img src="https://img.shields.io/badge/Docker-blue">
+</div>
 
 ### Протестировать на своем локальном сервере:
 1. Клонируйте репозиторий;
