@@ -91,7 +91,7 @@ docker compose ps
 
 ## Админ панель
 ![admin_panel.png](img/admin_panel.png)
-* Админка (SQLAlchemy Admin) - http://localhost:8080/admin
+* Админка (SQLAlchemy Admin) - http://localhost:8000/admin
 
 ## Flower интерфейс
 ![celery_flower.png](img/celery_flower.png)
