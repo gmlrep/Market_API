@@ -11,6 +11,8 @@ from PIL import Image
 from fastapi import HTTPException, Depends
 from passlib.context import CryptContext
 from fastapi import Request
+from starlette.requests import Request
+from starlette.responses import Response
 
 from app.core.config import settings
 from app.core.redis_client import Redis
@@ -18,6 +20,7 @@ from app.db.CRUD import BaseCRUD
 from app.schemas.customer import SPage, SPagination
 from app.schemas.seller import SManagerSignUp, SManagerAdd
 from app.schemas.user import SUserSignUp, SUserAdd, SUserInfo, HashedPasswordSalt
+from app.services.users import UsersService
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -94,7 +97,7 @@ def generate_salt() -> str:
     return salt
 
 
-async def get_hashed_psw(param: SUserSignUp, current_ip: str = None) -> SUserAdd:
+async def get_hashed_psw(param: Annotated[SUserSignUp, Depends()], request: Request) -> SUserAdd:
     salt = generate_salt()
     regex = "^[a-zA-Z0-9?.,*+_()&%=$#!]+$"
     pattern = re.compile(regex)
@@ -112,7 +115,7 @@ async def get_hashed_psw(param: SUserSignUp, current_ip: str = None) -> SUserAdd
         email=param.email,
         hashed_password=hashed_password,
         salt=salt,
-        white_list_ip=current_ip
+        white_list_ip=request.client.host
     )
 
 
@@ -146,7 +149,8 @@ async def get_manager_to_add(param: SManagerSignUp, current_ip: str = '34') -> S
 
 
 async def authenticate_user(email: str, password: str) -> SUserInfo | bool:
-    user = await BaseCRUD.get_user(email)
+    user = await UsersService().find_one({'email': email})
+    # user = await BaseCRUD.get_user(email)
     if not user:
         raise HTTPException(
             status_code=401,
@@ -246,3 +250,15 @@ async def is_access_token_admin(token: str, request: Request) -> dict:
             detail="Expected 'access token' and got 'refresh token'",
         )
     return payload
+
+
+async def set_update_tokens(user, request: Request, response: Response):
+
+    payload = {'sub': user.id, 'role': user.role, 'username': user.email, 'is_active': user.is_active,
+               'is_enabled': user.is_enabled, 'is_admin': user.is_admin, 'is_baned': user.is_baned}
+    access_token = create_access_token(data=payload)
+    refresh_token = create_refresh_token(data=payload)
+    response.set_cookie(key='access_token', value=access_token,
+                        expires=60 * settings.auth_jwt.access_token_expire_minutes)
+    await Redis.set(request.client.host, refresh_token, 60 * 60 * 24 * settings.auth_jwt.refresh_token_expire_days)
+    return access_token

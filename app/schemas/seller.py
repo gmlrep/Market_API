@@ -19,6 +19,12 @@ class SSellerCom(BaseModel):
     type_company: int
 
 
+class SSellerAdd(SSellerCom):
+    company_id: int
+    user_id: int
+    company_role: int
+
+
 class SCompanyUpdate(SCompany):
     name: str | None = None
 
@@ -46,5 +52,8 @@ class SManagerAdd(SUser):
 
 
 class SManagerSetPassword(BaseModel):
-    token: str
     password: str
+
+
+class SToken(BaseModel):
+    token: str

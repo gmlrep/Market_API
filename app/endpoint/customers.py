@@ -16,6 +16,7 @@ from app.schemas.customer import SCategory, SProductsInfo, SProduct, SAccountInf
     SReviewAdd, SContact, SPagination, SReviewInfo
 from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse, SUserEdit
 from app.core.config import settings
+from app.services.customers import CustomersService
 
 customers = APIRouter(
     prefix="/api/v1/customers",
@@ -28,19 +29,16 @@ customers = APIRouter(
 async def edit_profile(param: Annotated[SUserEdit, Depends()],
                        user_id: Annotated[int, Depends(get_user_id_by_token)],
                        file: UploadFile = None) -> SOkResponse:
-
-    await BaseCRUD.edit_profile_user(param=param, user_id=user_id, file=file)
+    await CustomersService().update_profile(data=param, user_id=user_id, file=file)
     create_img(user_id=user_id, files=file, source='users') if file is not None else ...
     return SOkResponse()
 
 
-# Обернуть в кэш
 @customers.get('/category/{category}')
 @cache(expire=60)
 async def get_product_by_category(param: Annotated[SCategory, Depends()],
                                   pagination: SPagination = Depends(pagination_param)) -> list[SProductsInfo]:
     products = await BaseCRUD.get_products_category(category_name=param.category)
-
     return products[pagination.start:pagination.end]
 
 
@@ -50,11 +48,10 @@ async def get_product_by_id(param: Annotated[SProduct, Depends()]) -> SProductsI
     return product
 
 
-# Обернуть в кэш
 @customers.get('/category')
 @cache(expire=60)
 async def get_category_list() -> list[SCategories]:
-    categories = await BaseCRUD.get_categories()
+    categories = await CustomersService().get_categories()
     return categories
 
 
@@ -67,15 +64,14 @@ async def get_account_info(user_id: Annotated[int, Depends(get_user_id_by_token)
 @customers.post('/basket', status_code=201)
 async def add__or_edit_basket_by_product_id(param: Annotated[SBasket, Depends()],
                                             user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
-    await BaseCRUD.add_basket(param=param, user_id=user_id)
+    await CustomersService().add_basket(data=param, user_id=user_id)
     return SOkResponse()
 
 
 @customers.delete('/basket')
 async def delete_basket_by_id(param: Annotated[SOrderId, Depends()],
                               user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
-
-    order_id = await BaseCRUD.delete_basket(param=param, user_id=user_id)
+    order_id = await CustomersService().delete_basket(data=param, user_id=user_id)
     return SOkResponse()
 
 
@@ -83,8 +79,7 @@ async def delete_basket_by_id(param: Annotated[SOrderId, Depends()],
 async def add_review_of_product(param: Annotated[SReviewAdd, Depends()],
                                 user_id: Annotated[int, Depends(get_user_id_by_token)],
                                 photos: list[UploadFile] = None) -> SOkResponse:
-    review_id = await BaseCRUD.add_review(param=param, user_id=user_id, photos=photos)
-
+    review_id = await CustomersService().add_review(data=param, user_id=user_id, photos=photos)
     create_img(user_id=review_id, source='review', files=photos) if photos is not None else ...
     return SOkResponse()
 
@@ -92,14 +87,14 @@ async def add_review_of_product(param: Annotated[SReviewAdd, Depends()],
 @customers.post('/contact')
 async def add_contact_info(param: Annotated[SContact, Depends()],
                            user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
-    await BaseCRUD.add_contacts(param=param, user_id=user_id)
+    await CustomersService().add_contacts(data=param, user_id=user_id)
     return SOkResponse()
 
 
 @customers.put('/contact')
 async def edit_contact_info(param: Annotated[SContact, Depends()],
                             user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
-    await BaseCRUD.edit_contacts(param=param, user_id=user_id)
+    await CustomersService().edit_contacts(data=param, user_id=user_id)
     return SOkResponse()
 
 

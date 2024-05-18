@@ -34,10 +34,6 @@ class SUserInfo(SUser):
     white_list_ip: str | None = None
 
 
-class STokenVerify(BaseModel):
-    token: str
-
-
 class HashedPasswordSalt(BaseModel):
     hashed_password: str
     salt: str

@@ -22,19 +22,8 @@ from app.endpoint.auth import users
 # from app.middleware.middleware import logging_middleware
 
 
-# Инициация тестовой базы данных
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    await BaseCRUD.delete_table()
-    print("База отчищена")
-    await BaseCRUD.create_table()
-    print("База готова к работе")
-    yield
-    print("Выключение")
-
-
-@asynccontextmanager
-async def lifespan_redis(app_life: FastAPI):
+async def lifespan(app_life: FastAPI):
     print('Проверка подключения Redis...')
     await Redis.connect()
     print('Redis запущен и успешно подключен')
@@ -46,8 +35,7 @@ async def lifespan_redis(app_life: FastAPI):
 
 
 app = FastAPI(
-    # lifespan=lifespan,
-    lifespan=lifespan_redis,
+    lifespan=lifespan,
     title="Market API",
     summary="Market FastApi project",
     version="0.1.0a",
