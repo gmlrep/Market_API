@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+# from fastapi.staticfiles import StaticFiles
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from sqladmin import Admin
@@ -11,7 +11,6 @@ from sqladmin import Admin
 from app.core.config import settings
 from app.core.exception_handlers import custom_http_exception_handler
 from app.core.redis_client import Redis
-from app.db.CRUD import BaseCRUD
 from app.db.database import async_engine
 from app.admin.admin import auth_backend
 from app.admin.views import UserModelView, CategoryModelView, CompanyModelView, OrderModelView, ProductModelView, \
@@ -66,7 +65,7 @@ admin.add_view(ProductModelView)
 admin.add_view(ReviewModelView)
 
 # app.middleware('http')(logging_middleware)
-app.mount('/media', StaticFiles(directory='media'), name='media')
+# app.mount('/media', StaticFiles(directory='media'), name='media')
 
 if __name__ == '__main__':
     try:

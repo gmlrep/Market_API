@@ -93,4 +93,3 @@ docker compose ps
 ## Flower интерфейс
 ![celery_flower.png](img/celery_flower.png)
 * Celery (Flower) - http://localhost:9999
-
