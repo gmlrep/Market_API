@@ -2,11 +2,10 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy import select, delete, update
 from sqlalchemy.orm import selectinload
 
-from app.db.database import Base
 from app.db.models import Users, Sellers, Products, Category, Parameters, Photos, Reviews
 from app.schemas.customer import SProductsInfo, SAccountInfo, SProduct, SReviewInfo
 from app.schemas.seller import SProducts, SProductDelete
-from app.db.database import async_engine, async_session
+from app.db.database import async_session
 
 
 class BaseCRUD:
