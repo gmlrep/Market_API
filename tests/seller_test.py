@@ -52,3 +52,16 @@ async def test_add_product_parameters(param, product_id, status_code, authentica
         'product_id': product_id,
     })
     assert response.status_code == status_code
+
+
+@pytest.mark.parametrize('email, fullname, age, status_code', [
+    ('manager@user.com', 'manager1', 34, 201),
+    ('manager.com', 'manager1', 34, 422),
+])
+async def test_add_manager(email, fullname, age, status_code, authenticated_seller_ac: AsyncClient):
+    response = await authenticated_seller_ac.post('api/v1/sellers/manager', params={
+        'email': email,
+        'fullname': fullname,
+        'age': age,
+    })
+    assert response.status_code == status_code
