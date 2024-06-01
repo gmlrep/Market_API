@@ -6,8 +6,7 @@ from fastapi import HTTPException, UploadFile
 from app.db.models import Users, Sellers, Companies, Products, Category, Contacts, Orders, Reviews, PhotoReview
 from app.repositories.crud import SQLAlchemyRepository
 from app.schemas.customer import SCategories, SBasket, SOrderId, SReviewAdd, SContact
-from app.schemas.seller import SSellerCom, SCompanyAdd, SCompanyUpdate, SProducts, SSellerAdd
-from app.schemas.user import SUserAdd, SUserInfo, SUserEdit
+from app.schemas.user import SUserEdit
 
 
 class CustomersService:
