@@ -44,7 +44,6 @@ app = FastAPI(
 app.include_router(users)
 app.include_router(customers)
 app.include_router(sellers)
-# app.include_router(admin)
 
 app.add_exception_handler(HTTPException, custom_http_exception_handler)
 

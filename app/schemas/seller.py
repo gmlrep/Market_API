@@ -31,7 +31,7 @@ class SCompanyUpdate(SCompany):
 
 class SProducts(BaseModel):
     name: str
-    price: int | None = None
+    price: PositiveInt | None = None
 
 
 class SProductDelete(BaseModel):

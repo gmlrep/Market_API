@@ -3,7 +3,6 @@ from pprint import pprint
 from typing import Annotated
 
 from PIL import Image
-from redis import asyncio as redis
 from fastapi import APIRouter, Depends, HTTPException, Response, File, UploadFile
 from fastapi.requests import Request
 from fastapi_cache.decorator import cache
@@ -14,8 +13,7 @@ from app.core.dependencies import access_customer, get_user_id_by_token
 from app.db.CRUD import BaseCRUD
 from app.schemas.customer import SCategory, SProductsInfo, SProduct, SAccountInfo, SCategories, SBasket, SOrderId, \
     SReviewAdd, SContact, SPagination, SReviewInfo
-from app.schemas.user import SUserSignUp, SToken, STokenResponse, SOkResponse, SUserEdit
-from app.core.config import settings
+from app.schemas.user import SOkResponse, SUserEdit
 from app.services.customers import CustomersService
 
 customers = APIRouter(
