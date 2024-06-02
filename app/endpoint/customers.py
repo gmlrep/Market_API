@@ -60,8 +60,8 @@ async def get_account_info(user_id: Annotated[int, Depends(get_user_id_by_token)
 
 
 @customers.post('/basket', status_code=201)
-async def add__or_edit_basket_by_product_id(param: Annotated[SBasket, Depends()],
-                                            user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
+async def add_or_edit_basket_by_product_id(param: Annotated[SBasket, Depends()],
+                                           user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
     await CustomersService().add_basket(data=param, user_id=user_id)
     return SOkResponse()
 
@@ -82,7 +82,7 @@ async def add_review_of_product(param: Annotated[SReviewAdd, Depends()],
     return SOkResponse()
 
 
-@customers.post('/contact')
+@customers.post('/contact', status_code=201)
 async def add_contact_info(param: Annotated[SContact, Depends()],
                            user_id: Annotated[int, Depends(get_user_id_by_token)]) -> SOkResponse:
     await CustomersService().add_contacts(data=param, user_id=user_id)

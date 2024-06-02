@@ -20,9 +20,9 @@ async def test_register_user(email, password, fullname, age, status_code, ac: As
 
 
 @pytest.mark.parametrize('email, fullname, age, password, role, status_code', [
-    ('customer1@customer.com', 'customer', 31, 'password12', 2, 201),
+    ('seller1@seller.com', 'seller1', 31, 'password12', 2, 201),
 ])
-async def test_register_customer(email, password, fullname, age, status_code, role, ac: AsyncClient):
+async def test_register_seller(email, password, fullname, age, status_code, role, ac: AsyncClient):
     response = await ac.post('/api/v1/auth/register', params={
         'email': email,
         'fullname': fullname,
