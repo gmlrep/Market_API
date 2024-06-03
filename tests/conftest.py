@@ -1,18 +1,38 @@
 import asyncio
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 import pytest
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy import insert
+from sqlalchemy import insert, NullPool
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 from app.core.config import settings
 from app.core.redis_client import Redis
 from app.core.security import create_access_token
 from app.db.models import Category, Sellers, Users, Companies
 from app.main import app as fastapi_app
-from app.db.database import async_engine, Base, async_session
+from app.db.database import async_engine, Base, async_session, get_async_session
 from redis import asyncio as redis
+
+
+# async_engine_test = create_async_engine(url=settings.db_settings.db_url_test,
+#                                         poolclass=NullPool)
+# async_session_test = async_sessionmaker(async_engine_test,
+#                                         class_=AsyncSession,
+#                                         expire_on_commit=False)
+# Base.metadata.bind = async_engine_test
+
+
+# @asynccontextmanager
+# async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
+#     async with async_engine() as session:
+#         yield session
+
+
+# fastapi_app.dependency_overrides[get_async_session] = override_get_async_session
 
 
 @pytest.fixture(scope='session')
