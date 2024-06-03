@@ -9,12 +9,6 @@ BASE_DIR = Path(__file__).parent.parent
 
 load_dotenv()
 
-POSTGRES_PASSWORD = os.getenv('POSTGRES_DB_PASSWORD')
-POSTGRES_USER = os.getenv('POSTGRES_DB_USER')
-POSTGRES_DB = os.getenv('POSTGRES_DB_USER')
-POSTGRES_HOST = os.getenv('POSTGRES_DB_HOST')
-POSTGRES_PORT = os.getenv('POSTGRES_DB_PORT')
-
 
 class RedisSettings(BaseModel):
     host: str = os.getenv('HOST_REDIS')
@@ -23,8 +17,23 @@ class RedisSettings(BaseModel):
 
 
 class DbSettings(BaseModel):
-    # db_url: str = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
-    db_url: str = f"sqlite+aiosqlite:///{BASE_DIR}/db/database.db"
+
+    POSTGRES_PASSWORD: str = os.getenv('POSTGRES_DB_PASSWORD')
+    POSTGRES_USER: str = os.getenv('POSTGRES_DB_USER')
+    POSTGRES_DB: str = os.getenv('POSTGRES_DB_USER')
+    POSTGRES_HOST: str = os.getenv('POSTGRES_DB_HOST')
+    POSTGRES_PORT: str = os.getenv('POSTGRES_DB_PORT')
+
+    # @property
+    # def db_url(self) -> str:
+    #     return (f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@'
+    #             f'{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}')
+
+    @property
+    def db_url(self) -> str:
+        return f"sqlite+aiosqlite:///{BASE_DIR}/db/database.db"
+
+    # db_url_test: str = f"sqlite+aiosqlite:///{BASE_DIR}/db/database_test.db"
     echo: bool = False
 
 
