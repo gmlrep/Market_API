@@ -1,6 +1,6 @@
 from typing import Union
 
-from fastapi import APIRouter, Response, Request, HTTPException
+from fastapi import Response, Request, HTTPException
 from sqladmin.authentication import AuthenticationBackend
 from starlette.responses import RedirectResponse
 
