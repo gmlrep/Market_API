@@ -5,7 +5,7 @@ from sqladmin.authentication import AuthenticationBackend
 from starlette.responses import RedirectResponse
 
 from app.core.config import settings
-from app.core.security import authenticate_user, create_refresh_token, create_access_token, is_access_token, \
+from app.core.security import authenticate_user, create_refresh_token, create_access_token, \
     is_access_token_admin
 from app.db.database import async_session
 from app.core.redis_client import Redis
