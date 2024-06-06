@@ -1,8 +1,8 @@
 """Create user table
 
-Revision ID: 5eea671dd5e4
+Revision ID: 04193d6abe9a
 Revises: 
-Create Date: 2024-05-14 11:23:47.034648
+Create Date: 2024-06-06 14:47:20.041886
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5eea671dd5e4'
+revision: str = '04193d6abe9a'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -48,8 +48,8 @@ def upgrade() -> None:
     sa.Column('age', sa.Integer(), nullable=True),
     sa.Column('hashed_password', sa.String(), nullable=False),
     sa.Column('salt', sa.String(), nullable=False),
-    sa.Column('white_list_ip', sa.String(), nullable=False),
-    sa.Column('create_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('white_list_ip', sa.String(), nullable=True),
+    sa.Column('create_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('is_enabled', sa.Boolean(), nullable=False),
     sa.Column('is_baned', sa.Boolean(), nullable=False),
@@ -130,7 +130,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('rate', sa.Integer(), nullable=False),
     sa.Column('comment', sa.String(), nullable=False),
-    sa.Column('create_at', sa.DateTime(), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('create_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('product_id', sa.Integer(), nullable=False),
     sa.Column('order_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),

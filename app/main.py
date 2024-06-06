@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from sqladmin import Admin
+from prometheus_client import make_asgi_app
 
 from app.core.config import settings
 from app.core.exception_handlers import custom_http_exception_handler
@@ -40,10 +41,13 @@ app = FastAPI(
     version="0.1.0a",
 )
 
-
 app.include_router(users)
 app.include_router(customers)
 app.include_router(sellers)
+
+
+metrics_app = make_asgi_app()
+app.mount('/metrics', metrics_app)
 
 app.add_exception_handler(HTTPException, custom_http_exception_handler)
 
@@ -66,8 +70,8 @@ admin.add_view(ReviewModelView)
 # app.middleware('http')(logging_middleware)
 # app.mount('/media', StaticFiles(directory='media'), name='media')
 
-if __name__ == '__main__':
-    try:
-        uvicorn.run(f"{__name__}:app", port=settings.fast_api_port)
-    except KeyboardInterrupt:
-        pass
+# if __name__ == '__main__':
+#     try:
+#         uvicorn.run(f"{__name__}:app", port=settings.fast_api_port)
+#     except KeyboardInterrupt:
+#         pass
