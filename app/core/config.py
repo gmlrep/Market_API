@@ -24,14 +24,14 @@ class DbSettings(BaseModel):
     POSTGRES_HOST: str = os.getenv('POSTGRES_DB_HOST')
     POSTGRES_PORT: str = os.getenv('POSTGRES_DB_PORT')
 
-    # @property
-    # def db_url(self) -> str:
-    #     return (f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@'
-    #             f'{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}')
-
     @property
     def db_url(self) -> str:
-        return f"sqlite+aiosqlite:///{BASE_DIR}/db/database.db"
+        return (f'postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@'
+                f'{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}')
+
+    # @property
+    # def db_url(self) -> str:
+    #     return f"sqlite+aiosqlite:///{BASE_DIR}/db/database.db"
 
     # db_url_test: str = f"sqlite+aiosqlite:///{BASE_DIR}/db/database_test.db"
     echo: bool = False

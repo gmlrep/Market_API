@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.requests import Request
+import prometheus_client
 
 from app.core.dependencies import get_user_id_by_token, get_user_id_by_set_token
 from app.core.redis_client import Redis
@@ -19,9 +20,17 @@ users = APIRouter(
     tags=['Auth'],
 )
 
+register_count = prometheus_client.Counter(
+    "register_count",
+    "Number of register"
+)
+
 
 @users.post('/register', status_code=201)
 async def registration(user=Depends(get_hashed_psw)) -> SOkResponse:
+
+    register_count.inc(1)
+
     user_id = await UsersService().add_one(user)
     send_verify_email.delay(user_id=user_id, email=user.email)
     return SOkResponse()

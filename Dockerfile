@@ -14,4 +14,4 @@ WORKDIR /app
 COPY app /app/app
 COPY ./alembic.ini /app/alembic.ini
 COPY ./bash /app/bash
-RUN chmod a+x ./bash/*.sh
+RUN chmod a+x /app/bash/*.sh
