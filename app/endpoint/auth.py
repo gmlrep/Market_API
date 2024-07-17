@@ -28,7 +28,12 @@ register_count = prometheus_client.Counter(
 
 @users.post('/register', status_code=201)
 async def registration(user=Depends(get_hashed_psw)) -> SOkResponse:
+    """
+    Регистрация нового пользователя
 
+    :param user: Данные пользователя для регистрации
+    :return: Успешный статус
+    """
     register_count.inc(1)
 
     user_id = await UsersService().add_one(user)
@@ -38,7 +43,16 @@ async def registration(user=Depends(get_hashed_psw)) -> SOkResponse:
 
 @users.post('/login')
 async def get_token(param: Annotated[UserLogIn, Depends()],
-                    response: Response, request: Request) -> STokenResponse:
+                    response: Response,
+                    request: Request) -> STokenResponse:
+    """
+    Авторизация пользователя
+
+    :param param: данные для авторизации пользователя
+    :param response: объект Response данных
+    :param request: объект Request данных
+    :return: access токен пользователя
+    """
     user = await authenticate_user(email=param.username, password=param.password)
     if request.client.host not in user.white_list_ip:
         send_email_new_ip.delay(user_id=user.id, email=user.email, request_ip=request.client.host)
@@ -47,8 +61,18 @@ async def get_token(param: Annotated[UserLogIn, Depends()],
 
 
 @users.post('/refresh')
-async def auth_refresh_jwt(request: Request, response: Response,
+async def auth_refresh_jwt(request: Request,
+                           response: Response,
                            user_id: Annotated[int, Depends(get_user_id_by_token)]) -> STokenResponse:
+    """
+    Обновление пары токенов access и refresh
+
+    :param response: объект Response данных
+    :param request: объект Request данных
+    :param user_id: user_id пользователя извлеченный из payload токена
+
+    :return: новый access токен пользователя
+    """
     payload = decode_jwt(token=await Redis.get(request.client.host))
     if payload.get('type') == 'access':
         raise HTTPException(
@@ -61,7 +85,14 @@ async def auth_refresh_jwt(request: Request, response: Response,
 
 
 @users.post('/logout')
-async def logout_user(response: Response, request: Request) -> SOkResponse:
+async def logout_user(response: Response,
+                      request: Request) -> SOkResponse:
+    """
+    Выход из сессии
+
+    :param response: объект Response данных
+    :param request: объект Request данных
+    """
     response.delete_cookie('access_token')
     await Redis.delete(request.client.host)
     return SOkResponse()
