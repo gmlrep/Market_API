@@ -1,14 +1,16 @@
+from typing import Optional
+
 from pydantic import BaseModel, PositiveInt, EmailStr
 
 from app.schemas.user import SUser
 
 
 class SCompany(BaseModel):
-    description: str | None = None
-    inn: int | None = None
-    payment_details: str | None = None
-    legal_address: str | None = None
-    passport_data: str | None = None
+    description: Optional[str] = None
+    inn: Optional[int] = None
+    payment_details: Optional[str] = None
+    legal_address: Optional[str] = None
+    passport_data: Optional[str] = None
 
 
 class SCompanyAdd(SCompany):
@@ -26,12 +28,12 @@ class SSellerAdd(SSellerCom):
 
 
 class SCompanyUpdate(SCompany):
-    name: str | None = None
+    name: Optional[str] = None
 
 
 class SProducts(BaseModel):
     name: str
-    price: PositiveInt | None = None
+    price: Optional[PositiveInt] = None
 
 
 class SProductDelete(BaseModel):
@@ -41,13 +43,13 @@ class SProductDelete(BaseModel):
 class SManagerSignUp(BaseModel):
     email: EmailStr
     fullname: str
-    age: PositiveInt | None = None
+    age: Optional[PositiveInt] = None
 
 
 class SManagerAdd(SUser):
     hashed_password: str
     salt: str
-    white_list_ip: str | None = None
+    white_list_ip: Optional[str] = None
     is_active: bool = False
 
 

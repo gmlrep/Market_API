@@ -148,7 +148,7 @@ async def get_manager_to_add(param: SManagerSignUp, current_ip: str = '34') -> S
     )
 
 
-async def authenticate_user(email: str, password: str) -> SUserInfo | bool:
+async def authenticate_user(email: str, password: str) -> SUserInfo:
     user = await UsersService().find_one({'email': email})
     # user = await BaseCRUD.get_user(email)
     if not user:
@@ -210,7 +210,7 @@ def is_valid_token(token: str) -> bool:
         return False
 
 
-def create_img(user_id: int, files, source: str):
+def create_img(user_id: int, files, source: str) -> None:
     for i, file in enumerate(files):
         with open(f'media/{source}/{source}{user_id}_{i + 1}.jpg', 'wb+') as buffer:
             shutil.copyfileobj(file.file, buffer)
