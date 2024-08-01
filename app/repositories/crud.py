@@ -1,4 +1,5 @@
 import asyncio
+from typing import Optional
 
 from pydantic import BaseModel
 from sqlalchemy import insert, select, update, delete
@@ -20,8 +21,10 @@ class SQLAlchemyRepository:
     async def read(self, schema, filter_by: dict):
         async with get_async_session() as session:
             stmt = select(self.model).filter_by(**filter_by)
-            resp = await session.execute(stmt)
-            res = [schema.model_validate(result, from_attributes=True) for result in resp.first()]
+            resp = (await session.execute(stmt)).first()
+            if resp is None:
+                return None
+            res = [schema.model_validate(result, from_attributes=True) for result in resp]
             return res[0]
 
     async def update(self, filter_by: dict, update_value: dict):
