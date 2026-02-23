@@ -32,14 +32,14 @@ from app.endpoint.auth import users
 
 @asynccontextmanager
 async def lifespan(app_life: FastAPI):
-    print("Проверка подключения Redis...")
-    await Redis.connect()
-    print("Redis запущен и успешно подключен")
-    FastAPICache.init(RedisBackend(Redis.client), prefix="fastapi-cache")
-    print("Fast-api Cache подключен")
+    # print("Проверка подключения Redis...")
+    # await Redis.connect()
+    # print("Redis запущен и успешно подключен")
+    # FastAPICache.init(RedisBackend(Redis.client), prefix="fastapi-cache")
+    # print("Fast-api Cache подключен")
     yield
-    await Redis.close()
-    print("Соединение с Redis прервано")
+    # await Redis.close()
+    # print("Соединение с Redis прервано")
 
 
 app = FastAPI(
@@ -78,8 +78,8 @@ admin.add_view(ReviewModelView)
 # app.middleware('http')(logging_middleware)
 # app.mount('/media', StaticFiles(directory='media'), name='media')
 
-# if __name__ == '__main__':
-#     try:
-#         uvicorn.run(f"{__name__}:app", port=settings.fast_api_port)
-#     except KeyboardInterrupt:
-#         pass
+if __name__ == '__main__':
+    try:
+        uvicorn.run(f"{__name__}:app", port=settings.fast_api_port)
+    except KeyboardInterrupt:
+        pass

@@ -1,8 +1,41 @@
-[tool.pytest.ini_options]
-pythonpath = [
-    ".", "app"
+[project]
+name = "market-api"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "aiohttp>=3.13",
+    "aiosqlite~=0.20.0",
+    "alembic~=1.13.1",
+    "asyncpg==0.29.0",
+    "bcrypt==4.1.3",
+    "celery~=5.4.0",
+    "cryptography>=43",
+    "email-validator==2.1.1",
+    "fastapi>=0.112.0",
+    "fastapi-cache2~=0.2.1",
+    "flake8~=7.0.0",
+    "flower~=2.0.1",
+    "httpx~=0.27.0",
+    "itsdangerous~=2.2.0",
+    "passlib~=1.7.4",
+    "pillow>=12.1.1",
+    "prometheus-client~=0.20.0",
+    "pydantic~=2.7.2",
+    "pydantic-settings~=2.2.1",
+    "pyjwt~=2.8.0",
+    "pytest~=8.2.1",
+    "pytest-asyncio~=0.23.7",
+    "python-dotenv~=1.0.1",
+    "python-multipart>=0.0.22",
+    "redis~=5.0.4",
+    "sqladmin~=0.17.0",
+    "sqlalchemy~=2.0.30",
+    "starlette>=0.51.0",
+    "uvicorn~=0.30.0",
 ]
-asyncio_mode = "auto"
-addopts = [
-    "-p", "no:warnings"
-]
+
+
+[tool.ruff]
+target-version = "py312"

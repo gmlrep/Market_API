@@ -13,7 +13,7 @@ from app.core.config import settings
 from app.core.redis_client import Redis
 from app.core.security import create_access_token
 from app.db.models import Category, Sellers, Users, Companies
-from app.main import app as fastapi_app
+from app.__main__ import app as fastapi_app
 from app.db.database import async_engine, Base, async_session, get_async_session
 from redis import asyncio as redis
 
