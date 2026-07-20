@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, PositiveInt
 
@@ -27,18 +28,18 @@ class SProductsInfo(BaseModel):
     company_id: int
     photo: list[SPhotos]
     parameter: list[SParameters]
-    price: PositiveInt | None = None
-    quantity: PositiveInt | None = None
-    rate: int | None = None
+    price: Optional[PositiveInt] = None
+    quantity: Optional[PositiveInt] = None
+    rate: Optional[int] = None
 
 
 class SContact(BaseModel):
-    city: str | None = None
-    street: str | None = None
-    house: str | None = None
-    building: str | None = None
-    literal: str | None = None
-    apartment: str | None = None
+    city: Optional[str] = None
+    street: Optional[str] = None
+    house: Optional[str] = None
+    building: Optional[str] = None
+    literal: Optional[str] = None
+    apartment: Optional[str] = None
 
 
 class SOrderInfo(BaseModel):
@@ -54,10 +55,10 @@ class SAccountInfo(BaseModel):
     email: str
     fullname: str
     age: PositiveInt
-    contact: SContact | None
+    contact: Optional[SContact]
     order: list[SOrderInfo]
-    photo: str | None
-    create_at: datetime
+    photo: Optional[str]
+    created_at: datetime
 
 
 class SOrderId(BaseModel):
@@ -81,7 +82,7 @@ class SReviewAdd(BaseModel):
 
 
 class SPage(BaseModel):
-    page: PositiveInt
+    page: PositiveInt = 1
 
 
 class SPagination(BaseModel):
@@ -100,4 +101,4 @@ class SReviewInfo(BaseModel):
     comment: str
     photo: list[SPhotos]
     user: SReviewUser
-    create_at: datetime
+    created_at: datetime

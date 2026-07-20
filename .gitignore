@@ -3,8 +3,15 @@ __pycache__/
 .env
 /docker-for.env
 /app/certs/
+/certs/
 /.venv/
 /postgres
 /app/db/database.db
 /app/logs/
 app/media
+.coverage
+coverage.xml
+.htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/

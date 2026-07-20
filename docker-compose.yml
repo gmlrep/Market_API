@@ -1,109 +1,106 @@
-version: "3.8"
-
 services:
-
-  db:
-    container_name: postgres
-    image: postgres
-    command: ["-p", "${POSTGRES_DB_PORT}"]
-    expose:
-      - "${POSTGRES_DB_PORT}"
-    restart: 'always'
+  postgres:
+    container_name: market_api_postgres
+    image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      - 'POSTGRES_PASSWORD=${POSTGRES_DB_PASSWORD}'
-      - 'POSTGRES_DB=${POSTGRES_DB_USER}'
-      - 'POSTGRES_USER=${POSTGRES_DB_USER}'
-#    volumes:
-#      - ./postgres:/var/lib/postgresql/data
+      POSTGRES_USER: ${POSTGRES_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-market_api}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - backend
 
   redis:
-    container_name: redis
-    image: 'redis:latest'
-    restart: 'always'
-    environment:
-      - 'REDIS_HOST=redis'
-      - 'REDIS_PORT=${PORT_REDIS}'
+    container_name: market_api_redis
+    image: redis:7-alpine
+    restart: unless-stopped
     ports:
-      - '${PORT_REDIS}:6379'
-#    volumes:
-#      - '$PWD/redis.conf:/usr/local/etc/redis/redis.conf'
-    command:
-      - 'redis-server'
+      - "${PORT_REDIS:-6379}:6379"
     healthcheck:
-      test: [ "CMD", "redis-cli","ping" ]
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
 
   api:
-    container_name: fast_api
+    container_name: market_api
     build:
       context: .
       dockerfile: Dockerfile
-    restart: 'always'
+      target: runtime
+    restart: unless-stopped
     env_file:
-      - docker-for.env
+      - .env
     environment:
-      - 'API_REDIS_HOST=redis'
-    command: ["sh", "/app/bash/app.sh"]
+      POSTGRES_DB_HOST: postgres
+      HOST_REDIS: redis
     ports:
-      - '${FAST_API_PORT}:8000'
+      - "${FAST_API_PORT:-9000}:${FAST_API_PORT:-9000}"
+    volumes:
+      - ./certs:/app/certs:ro
     depends_on:
-      - db
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
 
   celery:
+    container_name: market_api_celery
     build:
       context: .
-    container_name: celery_app
+      dockerfile: Dockerfile
+      target: runtime
+    restart: unless-stopped
     env_file:
-      - docker-for.env
+      - .env
+    environment:
+      HOST_REDIS: redis
+      POSTGRES_DB_HOST: postgres
     command: ["/app/bash/celery.sh", "celery"]
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
 
   flower:
+    container_name: market_api_flower
     build:
       context: .
-    container_name: flower_app
+      dockerfile: Dockerfile
+      target: runtime
+    restart: unless-stopped
     env_file:
-      - docker-for.env
-    command: ["/app/bash/celery.sh", "flower"]
-    depends_on:
-      - redis
-      - celery
-    ports:
-      - '${FLOWER_PORT}:5555'
-
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-
-  grafana:
-    image: grafana/grafana
-    container_name: grafana
+      - .env
     environment:
-      - 'GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}'
-      - 'GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}'
-      - 'GF_USERS_ALLOW_SIGN_UP=false'
+      HOST_REDIS: redis
+      POSTGRES_DB_HOST: postgres
+    command: ["/app/bash/celery.sh", "flower"]
     ports:
-      - "${GRAFANA_PORT}:3000"
-#    volumes:
-#      - grafana_data:/var/lib/grafana
+      - "${FLOWER_PORT:-9999}:5555"
+    depends_on:
+      - celery
+      - redis
+    networks:
+      - backend
 
-#  volumes:
-#    prometheus_data:
-#      driver: local
-#      driver_opts:
-#        o: bind
-#        type: none
-#        device: ./prometheus_data
-#    grafana_data:
-#      driver: local
-#      driver_opts:
-#        o: bind
-#        type: none
-#        device: ./grafana_data
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres_data:

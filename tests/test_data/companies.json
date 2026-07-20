@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "name": "Test Company",
+    "description": "Demo",
+    "inn": 1234567890,
+    "is_active": true
+  }
+]

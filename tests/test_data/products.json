@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "name": "Test Product",
+    "price": 1000,
+    "quantity": 10,
+    "rate": 5,
+    "company_id": 1,
+    "category_id": 1
+  }
+]

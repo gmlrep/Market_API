@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, constr, EmailStr, PositiveInt
 
 
@@ -20,7 +22,7 @@ class SUserSignUp(SUser):
 class SUserAdd(SUser):
     hashed_password: str
     salt: str
-    white_list_ip: str | None = None
+    white_list_ip: Optional[str] = None
 
 
 class SUserInfo(SUser):
@@ -31,7 +33,7 @@ class SUserInfo(SUser):
     is_enabled: bool
     is_baned: bool
     is_admin: bool
-    white_list_ip: str | None = None
+    white_list_ip: Optional[str] = None
 
 
 class HashedPasswordSalt(BaseModel):
@@ -51,16 +53,16 @@ class SPasswordChange(BaseModel):
 
 class STokenResponse(BaseModel):
     status: str = 'success'
-    data: SToken | None = None
-    details: str | None = None
+    data: Optional[SToken] = None
+    details: Optional[str] = None
 
 
 class SOkResponse(BaseModel):
     status: str = 'success'
     data: dict = {'ok': True}
-    details: str | None = None
+    details: Optional[str] = None
 
 
 class SUserEdit(BaseModel):
     fullname: str | None = None
-    age: PositiveInt | None = None
+    age: Optional[PositiveInt] = None
