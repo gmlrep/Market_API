@@ -35,8 +35,24 @@ class ValidationError(HTTPException):
         )
 
 
+class UnauthorizedError(HTTPException):
+    def __init__(self, detail: Any = None, headers: dict[str, str] | None = None):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=detail, headers=headers
+        )
+
+
 class AuthError(HTTPException):
     def __init__(self, detail: Any = None, headers: dict[str, str] | None = None):
         super().__init__(
             status_code=status.HTTP_403_FORBIDDEN, detail=detail, headers=headers
+        )
+
+
+class ForbiddenError(HTTPException):
+    """Role/permission denied (legacy 406 used by Market_API)."""
+
+    def __init__(self, detail: Any = None, headers: dict[str, str] | None = None):
+        super().__init__(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=detail, headers=headers
         )

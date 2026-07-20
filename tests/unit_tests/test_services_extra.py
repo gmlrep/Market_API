@@ -3,7 +3,7 @@ import pytest
 from app.schemas.customer import SBasket, SContact, SOrderId, SReviewAdd
 from app.schemas.user import SUserEdit
 from app.schemas.seller import SProducts
-from fastapi import HTTPException
+from app.core.exceptions import AuthError, NotFoundError
 
 
 @pytest.mark.asyncio
@@ -29,7 +29,7 @@ async def test_customer_contacts(container):
         data=SContact(city="Moscow", street="Lenina"), user_id=1
     )
     assert contact_id > 0
-    with pytest.raises(HTTPException):
+    with pytest.raises(AuthError):
         await service.add_contacts(
             data=SContact(city="Moscow", street="Lenina"), user_id=1
         )
@@ -44,16 +44,16 @@ async def test_customer_profile_update(container):
     await service.update_profile(
         data=SUserEdit(fullname="Updated"), user_id=1, file=None
     )
-    with pytest.raises(HTTPException):
+    with pytest.raises(AuthError):
         await service.update_profile(data=SUserEdit(), user_id=1, file=None)
 
 
 @pytest.mark.asyncio
 async def test_customer_review_requires_taken_order(container):
     service = container.customer_service()
-    with pytest.raises(HTTPException):
+    with pytest.raises(NotFoundError):
         await service.add_review(
-            data=SReviewAdd(product_id=1, rate=5, comment="nice"),
+            data=SReviewAdd(product_id=999, rate=5, comment="nice"),
             user_id=1,
         )
 

@@ -48,6 +48,9 @@ dev = [
 [tool.ruff]
 target-version = "py312"
 
+[tool.ruff.lint.per-file-ignores]
+"app/models/*" = ["F821"]
+
 
 [tool.mypy]
 python_version = "3.12"
@@ -68,9 +71,6 @@ omit = [
     "app/migrations/**/*",
     "app/admin/*",
     "app/processes/*",
-    "app/endpoint/*",
-    "app/middleware/*",
-    "app/core/exception_handlers.py",
 ]
 
 [tool.coverage.report]

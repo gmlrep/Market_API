@@ -1,6 +1,4 @@
-from fastapi import HTTPException
-
-from app.core.exceptions import DuplicateError, AuthError
+from app.core.exceptions import DuplicateError, AuthError, UnauthorizedError
 from app.repository.user import UserRepository
 from app.schemas.user import SUserAdd, SUserInfo
 from app.services.base import BaseService
@@ -16,10 +14,7 @@ class UsersService(BaseService):
             user = await self.user_repository.create(data.model_dump())
             return user.id
         except DuplicateError:
-            raise HTTPException(
-                status_code=401,
-                detail="User with this email are exists",
-            )
+            raise UnauthorizedError(detail="User with this email are exists")
 
     async def find_one(self, filter_by: dict, schema=SUserInfo):
         return await self.user_repository.find_one(filter_by=filter_by, schema=schema)

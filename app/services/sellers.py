@@ -1,5 +1,6 @@
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 
+from app.core.exceptions import AuthError, NotFoundError
 from app.core.security import get_manager_to_add
 from app.repository.seller import SellerRepository, CompanyRepository, ProductRepository
 from app.repository.user import UserRepository
@@ -34,10 +35,7 @@ class SellersService(BaseService):
     ) -> int:
         seller_id = await self.seller_repository.find_id(filter_by={"user_id": user_id})
         if seller_id:
-            raise HTTPException(
-                status_code=403,
-                detail="Seller and company already exist",
-            )
+            raise AuthError(detail="Seller and company already exist")
         company_row = await self.company_repository.create(company.model_dump())
         company_id = company_row.id
         rep = SSellerAdd(
@@ -68,7 +66,7 @@ class SellersService(BaseService):
         manager_id = await users_service.add_one(data=manager)
         company_info = await self.seller_repository.get_seller_by_user(user_id=user_id)
         if not company_info:
-            raise HTTPException(status_code=404, detail="Company not found")
+            raise NotFoundError(detail="Company not found")
         seller = await self.seller_repository.create(
             {
                 "company_role": 2,

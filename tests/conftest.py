@@ -58,7 +58,7 @@ from fastapi_cache.backends.inmemory import InMemoryBackend  # noqa: E402
 from app.core.config import settings  # noqa: E402
 from app.core.security import get_password_hash, generate_salt  # noqa: E402
 from app.core.database import Base  # noqa: E402
-from app.models import Users, Category, Companies, Sellers, Products  # noqa: E402
+from app.models import Users, Category, Companies, Sellers, Products, Orders  # noqa: E402
 from app.__main__ import AppCreator  # noqa: E402
 
 TEST_DATA_DIR = Path(__file__).parent / "test_data"
@@ -143,7 +143,10 @@ def insert_default_data(conn) -> None:
     for product in json.loads((TEST_DATA_DIR / "products.json").read_text(encoding="utf-8")):
         conn.execute(Products.__table__.insert(), product)
 
-    for table in ("users", "category", "company", "sellers", "products"):
+    for order in json.loads((TEST_DATA_DIR / "orders.json").read_text(encoding="utf-8")):
+        conn.execute(Orders.__table__.insert(), order)
+
+    for table in ("users", "category", "company", "sellers", "products", "orders"):
         try:
             conn.execute(
                 text(

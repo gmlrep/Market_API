@@ -17,6 +17,16 @@ class RedisSettings(BaseModel):
     port: int = int(os.getenv("PORT_REDIS") or "6379")
     password: str = os.getenv("PASSWORD_REDIS", "")
 
+    @property
+    def redis_url(self) -> str:
+        if self.password:
+            return f"redis://:{self.password}@{self.host}:{self.port}/0"
+        return f"redis://{self.host}:{self.port}/0"
+
+    @property
+    def broker_url(self) -> str:
+        return self.redis_url
+
 
 class DbSettings(BaseModel):
     POSTGRES_PASSWORD: str = os.getenv("POSTGRES_DB_PASSWORD", "")

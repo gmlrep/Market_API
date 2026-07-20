@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "quantity": 1,
+    "is_taken": true,
+    "is_order": true,
+    "user_id": 1,
+    "product_id": 1,
+    "contact_id": null
+  }
+]

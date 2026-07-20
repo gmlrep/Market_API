@@ -58,22 +58,45 @@ services:
     networks:
       - backend
 
-# Optional workers (uncomment when needed):
-#  celery:
-#    build:
-#      context: .
-#      target: runtime
-#    env_file:
-#      - .env
-#    environment:
-#      HOST_REDIS: redis
-#      POSTGRES_DB_HOST: postgres
-#    command: ["/app/bash/celery.sh", "celery"]
-#    depends_on:
-#      redis:
-#        condition: service_healthy
-#    networks:
-#      - backend
+  celery:
+    container_name: market_api_celery
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      HOST_REDIS: redis
+      POSTGRES_DB_HOST: postgres
+    command: ["/app/bash/celery.sh", "celery"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+
+  flower:
+    container_name: market_api_flower
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      HOST_REDIS: redis
+      POSTGRES_DB_HOST: postgres
+    command: ["/app/bash/celery.sh", "flower"]
+    ports:
+      - "${FLOWER_PORT:-9999}:5555"
+    depends_on:
+      - celery
+      - redis
+    networks:
+      - backend
 
 networks:
   backend:

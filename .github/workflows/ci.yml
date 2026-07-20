@@ -82,6 +82,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev
 
+      - name: Generate JWT keys
+        run: |
+          mkdir -p certs
+          openssl genrsa -out certs/jwt-private.pem 2048
+          openssl rsa -in certs/jwt-private.pem -pubout -out certs/jwt-public.pem
+
       - name: Run pytest with coverage
         run: |
           uv run coverage run -m pytest tests -v --tb=short

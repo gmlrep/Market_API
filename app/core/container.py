@@ -34,6 +34,10 @@ class Container(containers.DeclarativeContainer):
 
     db = providers.Singleton(Database, db_url=settings.db_settings.db_url)
 
+    config = providers.Object(settings)
+    redis_url = providers.Callable(lambda: settings.redis_settings.redis_url)
+    broker_url = providers.Callable(lambda: settings.redis_settings.broker_url)
+
     user_repository = providers.Factory(UserRepository, session=db.provided.session)
     seller_repository = providers.Factory(SellerRepository, session=db.provided.session)
     company_repository = providers.Factory(CompanyRepository, session=db.provided.session)

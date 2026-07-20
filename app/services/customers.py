@@ -1,5 +1,6 @@
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 
+from app.core.exceptions import AuthError, NotFoundError
 from app.repository.customer import (
     CustomerRepository,
     CategoryRepository,
@@ -49,12 +50,12 @@ class CustomersService(BaseService):
         if file is not None:
             user_param["photo"] = f"user{user_id}_1.jpg"
         if not user_param:
-            raise HTTPException(status_code=403, detail="Do not update")
+            raise AuthError(detail="Do not update")
         updated = await self.customer_repository.update_by_filter(
             filter_by={"id": user_id}, update_value=user_param
         )
         if not updated:
-            raise HTTPException(status_code=403, detail="User does not exist")
+            raise AuthError(detail="User does not exist")
 
     async def get_categories(self) -> list[SCategories]:
         return await self.category_repository.find_all(schema=SCategories)
@@ -103,10 +104,7 @@ class CustomersService(BaseService):
             }
         )
         if order_id is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Order by this id doesn't exist",
-            )
+            raise NotFoundError(detail="Order by this id doesn't exist")
         return order_id
 
     async def add_review(
@@ -121,10 +119,10 @@ class CustomersService(BaseService):
             }
         )
         if not order_id:
-            raise HTTPException(status_code=404, detail="Order not found")
+            raise NotFoundError(detail="Order not found")
         review_id = await self.review_repository.find_id(filter_by={"order_id": order_id})
         if review_id:
-            raise HTTPException(status_code=403, detail="Review is already exist")
+            raise AuthError(detail="Review is already exist")
         review_param = data.model_dump()
         review_param.update(user_id=user_id, order_id=order_id)
         review = await self.review_repository.create(review_param)
@@ -138,7 +136,7 @@ class CustomersService(BaseService):
     async def add_contacts(self, data: SContact, user_id: int) -> int:
         contact_id = await self.contact_repository.find_id(filter_by={"user_id": user_id})
         if contact_id:
-            raise HTTPException(status_code=403, detail="Contacts is already exist")
+            raise AuthError(detail="Contacts is already exist")
         contact_param = data.model_dump()
         contact_param["user_id"] = user_id
         row = await self.contact_repository.create(contact_param)
@@ -147,7 +145,7 @@ class CustomersService(BaseService):
     async def edit_contacts(self, data: SContact, user_id: int) -> None:
         contact_id = await self.contact_repository.find_id(filter_by={"user_id": user_id})
         if not contact_id:
-            raise HTTPException(status_code=404, detail="Contacts does not exist")
+            raise NotFoundError(detail="Contacts does not exist")
         await self.contact_repository.update_by_filter(
             filter_by={"user_id": user_id}, update_value=data.model_dump()
         )

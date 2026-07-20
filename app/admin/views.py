@@ -1,6 +1,6 @@
 from sqladmin import ModelView
 
-from app.db.models import Users, Category, Companies, Orders, Products, Reviews
+from app.models import Users, Category, Companies, Orders, Products, Reviews
 
 
 class UserModelView(ModelView, model=Users):

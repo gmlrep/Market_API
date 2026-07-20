@@ -1,5 +1,5 @@
+from app.core.exceptions import AuthError, UnauthorizedError
 from app.core.config import settings
-from app.core.exceptions import AuthError
 from app.core.redis_client import Redis
 from app.core.security import (
     verify_password,
@@ -12,7 +12,7 @@ from app.core.security import (
 from app.schemas.user import SUserInfo, SUserAdd
 from app.services.base import BaseService
 from app.services.users import UsersService
-from fastapi import Request, Response, HTTPException
+from fastapi import Request, Response
 
 
 class AuthService(BaseService):
@@ -26,8 +26,7 @@ class AuthService(BaseService):
     async def authenticate(self, email: str, password: str) -> SUserInfo:
         user = await self.user_service.find_one({"email": email})
         if not user:
-            raise HTTPException(
-                status_code=401,
+            raise UnauthorizedError(
                 detail="Incorrect username or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
@@ -35,10 +34,7 @@ class AuthService(BaseService):
             plain_password=password + user.salt + settings.password_salt.salt_static,
             hashed_password=user.hashed_password,
         ):
-            raise HTTPException(
-                status_code=401,
-                detail="Incorrect username or password",
-            )
+            raise UnauthorizedError(detail="Incorrect username or password")
         return user
 
     async def login(
@@ -80,7 +76,12 @@ class AuthService(BaseService):
         )
 
     async def change_password(
-        self, user_id: int, current_password: str, new_password: str, request: Request, response: Response
+        self,
+        user_id: int,
+        current_password: str,
+        new_password: str,
+        request: Request,
+        response: Response,
     ) -> None:
         user = await self.user_service.find_one(filter_by={"id": user_id})
         if not verify_password(
@@ -89,7 +90,9 @@ class AuthService(BaseService):
         ):
             raise AuthError(detail="Current password incorrect")
         param = get_changed_hashed_password(new_password=new_password)
-        await self.user_service.update(filter_by={"id": user_id}, update_value=param.model_dump())
+        await self.user_service.update(
+            filter_by={"id": user_id}, update_value=param.model_dump()
+        )
         await set_update_tokens(user=user, request=request, response=response)
 
     async def verify_email(self, user_id: int) -> None:

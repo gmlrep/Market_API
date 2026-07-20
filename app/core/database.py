@@ -36,15 +36,3 @@ class Database:
     async def session(self) -> AsyncGenerator[AsyncSession, None]:
         async with self._async_session_factory() as session:
             yield session
-
-
-# Backward-compatible module-level session for admin / legacy code
-_db = Database()
-async_engine = _db._async_engine
-async_session = _db._async_session_factory
-
-
-@asynccontextmanager
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session() as session:
-        yield session

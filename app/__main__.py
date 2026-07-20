@@ -1,17 +1,14 @@
-from contextlib import asynccontextmanager
-
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
 from sqladmin import Admin
 from prometheus_client import make_asgi_app
 
 from app.core.config import settings
 from app.core.exceptions import custom_http_exception_handler
-from app.core.redis_client import Redis
 from app.core.container import Container
+from app.core.events import lifespan
+from app.core.logging import setup_logging
 from app.utils.class_object import singleton
 from app.admin.admin import auth_backend
 from app.admin.views import (
@@ -25,23 +22,10 @@ from app.admin.views import (
 from app.api.v1.routes import routers as v1_routers
 
 
-@asynccontextmanager
-async def lifespan(_app_life: FastAPI):
-    try:
-        await Redis.connect()
-        FastAPICache.init(RedisBackend(Redis.client), prefix="fastapi-cache")
-    except Exception:
-        pass
-    yield
-    try:
-        await Redis.close()
-    except Exception:
-        pass
-
-
 @singleton
 class AppCreator:
     def __init__(self):
+        setup_logging()
         self.app = FastAPI(
             lifespan=lifespan,
             **settings.api.set_backend_app_attributes,
