@@ -8,19 +8,15 @@ import jwt
 from datetime import datetime, timedelta
 
 from PIL import Image
-from fastapi import HTTPException, Depends
+from fastapi import HTTPException, Depends, Request
 from passlib.context import CryptContext
-from fastapi import Request
-from starlette.requests import Request
 from starlette.responses import Response
 
 from app.core.config import settings
 from app.core.redis_client import Redis
-from app.db.CRUD import BaseCRUD
 from app.schemas.customer import SPage, SPagination
 from app.schemas.seller import SManagerSignUp, SManagerAdd
 from app.schemas.user import SUserSignUp, SUserAdd, SUserInfo, HashedPasswordSalt
-from app.services.users import UsersService
 
 pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
@@ -57,7 +53,7 @@ def decode_jwt(token: str) -> dict:
             token,
             key=settings.auth_jwt.public_key_path.read_text(),
             algorithms=settings.auth_jwt.algorithm)
-    except (jwt.exceptions.InvalidSignatureError, jwt.exceptions.DecodeError):
+    except (jwt.exceptions.InvalidSignatureError, jwt.exceptions.DecodeError, jwt.exceptions.InvalidSubjectError):
         raise HTTPException(
             status_code=403,
             detail='Incorrect token'
@@ -149,21 +145,10 @@ async def get_manager_to_add(param: SManagerSignUp, current_ip: str = '34') -> S
 
 
 async def authenticate_user(email: str, password: str) -> SUserInfo:
-    user = await UsersService().find_one({'email': email})
-    # user = await BaseCRUD.get_user(email)
-    if not user:
-        raise HTTPException(
-            status_code=401,
-            detail='Incorrect username or password',
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    if not verify_password(plain_password=password + user.salt + settings.password_salt.salt_static,
-                           hashed_password=user.hashed_password):
-        raise HTTPException(
-            status_code=401,
-            detail='Incorrect username or password'
-        )
-    return user
+    from app.__main__ import container
+
+    auth_service = container.auth_service()
+    return await auth_service.authenticate(email=email, password=password)
 
 
 def create_jwt(token_data: dict, token_type, expires_delta: timedelta) -> str:
@@ -206,7 +191,7 @@ def is_valid_token(token: str) -> bool:
         if payload.get('type') == 'refresh':
             return False
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -254,11 +239,25 @@ async def is_access_token_admin(token: str, request: Request) -> dict:
 
 async def set_update_tokens(user, request: Request, response: Response):
 
-    payload = {'sub': user.id, 'role': user.role, 'username': user.email, 'is_active': user.is_active,
-               'is_enabled': user.is_enabled, 'is_admin': user.is_admin, 'is_baned': user.is_baned}
+    payload = {
+        "sub": str(user.id),
+        "role": user.role,
+        "username": user.email,
+        "is_active": user.is_active,
+        "is_enabled": user.is_enabled,
+        "is_admin": user.is_admin,
+        "is_baned": user.is_baned,
+    }
     access_token = create_access_token(data=payload)
     refresh_token = create_refresh_token(data=payload)
-    response.set_cookie(key='access_token', value=access_token,
-                        expires=60 * settings.auth_jwt.access_token_expire_minutes)
-    await Redis.set(request.client.host, refresh_token, 60 * 60 * 24 * settings.auth_jwt.refresh_token_expire_days)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        expires=60 * settings.auth_jwt.access_token_expire_minutes,
+    )
+    await Redis.set(
+        request.client.host,
+        refresh_token,
+        60 * 60 * 24 * settings.auth_jwt.refresh_token_expire_days,
+    )
     return access_token

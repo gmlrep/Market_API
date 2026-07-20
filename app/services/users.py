@@ -1,35 +1,33 @@
-import asyncio
-from sqlite3 import IntegrityError
-
 from fastapi import HTTPException
 
-from app.db.models import Users
-from app.repositories.crud import SQLAlchemyRepository
+from app.core.exceptions import DuplicateError, AuthError
+from app.repository.user import UserRepository
 from app.schemas.user import SUserAdd, SUserInfo
+from app.services.base import BaseService
 
 
-class UsersService:
-    def __init__(self):
-        self.user_repo = SQLAlchemyRepository(model=Users)
+class UsersService(BaseService):
+    def __init__(self, user_repository: UserRepository):
+        super().__init__(repository=user_repository)
+        self.user_repository = user_repository
 
-    async def add_one(self, data):
+    async def add_one(self, data: SUserAdd) -> int:
         try:
-            user_id = await self.user_repo.create(data=data.model_dump())
-            return user_id
-        except IntegrityError:
+            user = await self.user_repository.create(data.model_dump())
+            return user.id
+        except DuplicateError:
             raise HTTPException(
                 status_code=401,
-                detail='User with this email are exists'
+                detail="User with this email are exists",
             )
 
     async def find_one(self, filter_by: dict, schema=SUserInfo):
-        user = await self.user_repo.read(filter_by=filter_by, schema=schema)
-        return user
+        return await self.user_repository.find_one(filter_by=filter_by, schema=schema)
 
     async def update(self, filter_by: dict, update_value: dict):
-        user_id = await self.user_repo.update(filter_by=filter_by, update_value=update_value)
+        user_id = await self.user_repository.update_by_filter(
+            filter_by=filter_by, update_value=update_value
+        )
         if not user_id:
-            raise HTTPException(
-                status_code=403,
-                detail='User does not exist'
-            )
+            raise AuthError(detail="User does not exist")
+        return user_id

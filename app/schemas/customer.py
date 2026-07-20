@@ -82,7 +82,7 @@ class SReviewAdd(BaseModel):
 
 
 class SPage(BaseModel):
-    page: PositiveInt
+    page: PositiveInt = 1
 
 
 class SPagination(BaseModel):

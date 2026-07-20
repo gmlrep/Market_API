@@ -55,10 +55,10 @@ def access_customer(request: Request):
 def get_user_id_by_token(request: Request) -> int:
     payload = is_access_token(token=request.cookies.get('access_token'))
     user_id = payload.get('sub')
-    return user_id
+    return int(user_id)
 
 
 def get_user_id_by_set_token(token: Annotated[SToken, Depends()]) -> int:
     payload = is_set_password_token(token=token.token)
     user_id = payload.get('sub')
-    return user_id
+    return int(user_id)

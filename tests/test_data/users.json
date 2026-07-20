@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "fullname": "Customer One",
+    "email": "customer@test.com",
+    "role": 1,
+    "age": 25,
+    "password": "password12",
+    "salt": "testsalt01",
+    "white_list_ip": "127.0.0.1testclient",
+    "is_active": true,
+    "is_enabled": true,
+    "is_baned": false,
+    "is_admin": false
+  },
+  {
+    "id": 2,
+    "fullname": "Seller One",
+    "email": "seller@test.com",
+    "role": 2,
+    "age": 30,
+    "password": "password12",
+    "salt": "testsalt02",
+    "white_list_ip": "127.0.0.1testclient",
+    "is_active": true,
+    "is_enabled": true,
+    "is_baned": false,
+    "is_admin": false
+  },
+  {
+    "id": 3,
+    "fullname": "Admin One",
+    "email": "admin@test.com",
+    "role": 1,
+    "age": 40,
+    "password": "password12",
+    "salt": "testsalt03",
+    "white_list_ip": "127.0.0.1testclient",
+    "is_active": true,
+    "is_enabled": true,
+    "is_baned": false,
+    "is_admin": true
+  }
+]

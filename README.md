@@ -1,98 +1,58 @@
 # Market API
 
-Market API, написанный на Fast API, который позволяет регистрироваться покупателям, продавцам. 
-Создание компании для продажи товаров, карточки продукта, добавление менеджеров для ведения компании с ограниченными правами.
+[![CI](https://github.com/gmlrep/Market_API/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/gmlrep/Market_API/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-83%25-green.svg)](#testing)
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 
-Реализована отправка писем для подтверждения почты через микросервис задач Celery.
+Market API on FastAPI: registration for customers and sellers, company/product management, JWT auth, Celery email tasks, Redis cache/sessions.
 
-Безопасность конечных точек обеспечена при помощи аутентификации с JWT-токенами (access и refresh), а так же ролевому доступу к операциям.
-Создана конечная точка для обновления пары JWT-токенов.
+## Features
+* JWT authentication (access + refresh) and role-based access
+* PostgreSQL + SQLAlchemy 2.0 async + Alembic
+* Repository / Service layers with `dependency-injector`
+* SQLAdmin, Celery/Flower, Prometheus metrics
+* Docker multi-stage image with healthcheck
 
-## Используемые технологии
-<div> 
-<img src="https://img.shields.io/badge/Python-blue">
-<img src="https://img.shields.io/badge/FAST API-blue">
-<img src="https://img.shields.io/badge/Celery-blue">
-<img src="https://img.shields.io/badge/Flower-blue">
-<img src="https://img.shields.io/badge/SQAlchemy-blue">
-<img src="https://img.shields.io/badge/Pydentic-blue">
-<img src="https://img.shields.io/badge/Redis-blue">
-<img src="https://img.shields.io/badge/FastApi Cache-blue">
-<img src="https://img.shields.io/badge/Alembic-blue">
-<img src="https://img.shields.io/badge/JWT-blue">
-<img src="https://img.shields.io/badge/PostgreSQL-blue">
-<img src="https://img.shields.io/badge/Docker-blue">
-<img src="https://img.shields.io/badge/Systemd-blue">
-<img src="https://img.shields.io/badge/Uvicorn-blue">
-<img src="https://img.shields.io/badge/Prometheus-blue">
-<img src="https://img.shields.io/badge/Grafana-blue">
-</div>
+## Install (local)
 
-## Содержание
-* [Особенности](#особенности)
-* [Установка](#установка)
-* [Документация](#документация)
+1. Clone the repo and `cd` into it
+2. Copy `.env-example` to `.env` and fill values
+3. Generate JWT keys under `certs/` (`jwt-private.pem` / `jwt-public.pem`)
+4. Install with [uv](https://docs.astral.sh/uv/):
 
-## Особенности
-* Регистрация и аутентификация пользователей (JWT)
-* PostgreSQL в качестве базы данных проекта
-* SQLAlchemy Admin для администрирования базы данных
-* Миграции базы данных с использованием Alembic
-* Использование Docker-контейнеров для удобного развертывания
-* Интеграция Celery и Flower для отправки писем на почту
-* Интеграция Prometheus и Grafana для вывода графиков нагрузки и статистики приложения 
-
-## Установка
-
-### Системные требования:
-<div>
-<img src="https://img.shields.io/badge/Python-3.9+-blue">
-<img src="https://img.shields.io/badge/Linux/Windows-blue">
-<img src="https://img.shields.io/badge/Redis-blue">
-<img src="https://img.shields.io/badge/Docker-blue">
-</div>
-
-### Протестировать на своем локальном сервере:
-1. Клонируйте репозиторий;
-2. Перейдите (`cd`) в клонированный каталог и создайте виртуальное окружение Python (Virtual environment, venv);
-3. Активируйте venv и установите pip и все зависимости из `requirements.txt`;
 ```bash
-sudo apt install python3-pip
-pip install -r requirements.txt
-```
-4. Совершите миграцию с помощью Alembic:
-```bash
-alembic upgrade head
-```
-5. Скопируйте `.env-example` под именем `.env`, откройте его и заполните переменные;
-6. Запустите через командную строку redis: 
-```bash
-redis-server
-```
-7. Внутри активированного venv:
-```bash
-python3 -m app
+uv sync --group dev
 ```
 
-### Запуск проекта на сервере с Docker
-1. Переименуйте файл `.env-example` в `.env`, откройте и заполните переменные;
-2. Запустите бота: 
+5. Run migrations and start:
+
 ```bash
-docker compose up -d
-```
-3. Проверьте, что контейнер поднялся: 
-```bash
-docker compose ps
+uv run alembic upgrade head
+uv run python -m app
 ```
 
-## Документация
+## Docker
+
+```bash
+cp .env-example .env
+# put JWT PEMs in ./certs
+docker compose up --build
+```
+
+API: `http://localhost:9000` · Docs: `/docs` · Health: `/health`
+
+## Testing
+
+```bash
+uv sync --group dev
+uv run coverage run -m pytest tests -v
+uv run coverage report -m
+```
+
+## Docs
 ![SwaggerUI.png](img/SwaggerUI.png)
 * API (Swagger UI) - http://localhost:8000/docs
 
-## Админ панель
+## Admin panel
 ![admin_panel.png](img/admin_panel.png)
-* Админка (SQLAlchemy Admin) - http://localhost:8000/admin
-
-## Flower интерфейс
-![celery_flower.png](img/celery_flower.png)
-* Celery (Flower) - http://localhost:9999
+* Admin panel (SQLAlchemy Admin) - http://localhost:8000/admin

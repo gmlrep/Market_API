@@ -1,13 +1,6 @@
-from fastapi import Request
-from fastapi.responses import JSONResponse
+
+from app.core.exceptions import custom_http_exception_handler  # noqa: F401
 
 
-# кастомный обработчик исключения для всех HTTPException
-async def custom_http_exception_handler(request: Request, exc):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            'status': 'error',
-            'data': None,
-            'details': exc.detail
-        })
+# Keep module for existing imports
+__all__ = ["custom_http_exception_handler"]

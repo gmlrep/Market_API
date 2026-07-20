@@ -1,6 +1,4 @@
 from sqladmin import ModelView
-from sqladmin._menu import CategoryMenu, ViewMenu
-from starlette.requests import Request
 
 from app.db.models import Users, Category, Companies, Orders, Products, Reviews
 
